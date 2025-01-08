@@ -1,0 +1,8 @@
+Para modo local
+python manage.py runserver --settings=djbiblio.settings.local
+
+
+o entrar a manage.py de la app 
+
+Y agregar esto  .local lo que es al final:
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'djbiblio.settings.local')

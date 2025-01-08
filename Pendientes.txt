@@ -1,0 +1,34 @@
+Que no sea obligatorio
+esto ya sea validara desde el front en las columnadas seleccionadas por el usuario 
+
+al crear tareas con el estado pendiente también se ordenen de 0 a 1 o mas 
+
+el orden automaticamente
+al crear tareas que se vaya de 1 hacia adelante las que se vayan creando
+
+
+crear un endpoint custom para que muestre sus empleados que le pertenecen al encargado que los registro
+
+
+#endpoint solo para empleados que creara el encargada
+añadir una columna en la tabla de usuarios que sea encargado id y esa columna seria opcional. LISTO
+
+#endpoint para mostrar los empleados que le pertenecen al encargado que los ah  creado. LISTO
+
+#endpoint para mostrar todos los proyecto que le pertenecen al encargado LISTO
+
+#endpoint para mostrar todos los proyectos que esta asignados el empleado  LISTO
+
+#endpoint para mostrar todos las tareas de 1 proyecto que esta asignado el empleado por su id de empleado LISTO
+
+/*
+#endpoint para mostrar todas las tareas de 1 proyecto por id del proyecto
+/
+Quitar estados y tambien los ordenes mostrar todas las tareas de ese proyecto
+/*
+
+
+#get se debe filtrar todos los usuarios con el encargado por query param
+
+
+#tokens para logins para los 3 roles para que inicien sesion  

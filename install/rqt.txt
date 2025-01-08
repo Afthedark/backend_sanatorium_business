@@ -1,0 +1,25 @@
+continuar 
+
+Curso Fazst de youtube
+https://www.youtube.com/watch?v=T1intZyhXDU
+
+
+---------------------------------------------------------------------------------------
+para Instalar el archivo requirements.txt desde otra maquina, ojo debe estar activo el entorno virtual primero
+pip install -r "requirements.txt"
+
+----------------------------------------------------------------------------------------
+para Crear el archivo requirements.txt ojo debe estar activo el entorno virtual primero
+pip freeze > "requirements.txt"
+
+
+
+
+******************************************************************************************
+
+Django admin
+
+user: admin
+password: password
+
+

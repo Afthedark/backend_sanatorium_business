@@ -1,0 +1,9 @@
+pip install virtualenv
+
+python -m venv nombre_entorno
+
+nombre_entorno\Scripts\activate 
+
+
+#Para desactivar
+deactivate

@@ -1,0 +1,5 @@
+
+
+db: bibliodb
+user: bi
+pass: password
