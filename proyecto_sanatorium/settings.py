@@ -14,6 +14,8 @@ from pathlib import Path
 
 import dj_database_url
 
+from decouple import config
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -23,12 +25,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure--9^f+v1j&&j7f)7&(ra777#w^n0qz1u^!4^!_!i_2lcvah#ddo'
+SECRET_KEY = config("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config("DEBUG", cast=bool)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = config("ALLOWED_HOSTS").split(",")
 
 """
 
@@ -117,8 +119,8 @@ DATABASES = {
 }
 
 #Data base postgres
-# pip install psycopg2-binary
-DATABASES["default"] = dj_database_url.parse("postgresql://db_sanatorium_user:OjdPencfIdxJgo5keAQO7ZOeq2Wnaae9@dpg-ctus4p56l47c739oqtc0-a.oregon-postgres.render.com/db_sanatorium")
+# pip install psycopg2
+DATABASES["default"] = dj_database_url.parse(config("DATABASE_URL"))
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
