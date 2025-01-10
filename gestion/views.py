@@ -40,31 +40,34 @@ class PermisoViewSet(ModelViewSet):
     queryset = Permiso.objects.all()
     serializer_class = PermisoSerializer
 
+
+
 class TareaViewSet(ModelViewSet):
     queryset = Tarea.objects.all()
     serializer_class = TareaSerializer
 
     def perform_create(self, serializer):
         """
-        Al crear una tarea por primera vez:
+        Al crear una tarea:
         - Se asigna estado 'pendiente'
-        - Se calcula el siguiente orden disponible
+        - Se calcula el siguiente orden para el empleado específico
         """
         with transaction.atomic():
             proyecto = serializer.validated_data.get('proyecto')
+            empleado = serializer.validated_data.get('empleado')
             
+            # Obtener el último orden para este empleado específico en este proyecto
             max_orden = Tarea.objects.filter(
                 proyecto=proyecto,
+                empleado=empleado,  # Filtrar por empleado específico
                 estado='pendiente'
             ).aggregate(Max('orden'))['orden__max']
             
+            # Si no hay tareas previas para este empleado, empezar desde 1
             nuevo_orden = 1 if max_orden is None else max_orden + 1
             
-            # Asignamos explícitamente el estado y orden al crear
-            serializer.save(
-                estado='pendiente',
-                orden=nuevo_orden
-            )
+            # Crear la tarea con estado pendiente y el nuevo orden
+            serializer.save(estado='pendiente', orden=nuevo_orden)
 
     
 
