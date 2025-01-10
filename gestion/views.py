@@ -24,6 +24,7 @@ from .serializers import (
 
 from django.db.models import Max
 import logging
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 
 logger = logging.getLogger(__name__)
 
@@ -47,41 +48,46 @@ class TareaViewSet(ModelViewSet):
     serializer_class = TareaSerializer
 
     def perform_create(self, serializer):
-        """
-        Al crear una tarea:
-        - Se asigna estado 'pendiente'
-        - Se calcula el siguiente orden para el empleado específico
-        """
         with transaction.atomic():
             proyecto = serializer.validated_data.get('proyecto')
             empleado = serializer.validated_data.get('empleado')
             
-            # Obtener el último orden para este empleado específico en este proyecto
+            # Obtener el máximo orden actual para este empleado y estado
             max_orden = Tarea.objects.filter(
                 proyecto=proyecto,
-                empleado=empleado,  # Filtrar por empleado específico
+                empleado=empleado,
                 estado='pendiente'
             ).aggregate(Max('orden'))['orden__max']
             
-            # Si no hay tareas previas para este empleado, empezar desde 1
+            # Asegurar que el orden comience en 1
             nuevo_orden = 1 if max_orden is None else max_orden + 1
             
-            # Crear la tarea con estado pendiente y el nuevo orden
-            serializer.save(estado='pendiente', orden=nuevo_orden)
+            # Crear la tarea
+            tarea = serializer.save(
+                estado='pendiente',
+                orden=nuevo_orden
+            )
+
+            # Reordenar todas las tareas para asegurar secuencia consecutiva
+            tareas = Tarea.objects.filter(
+                proyecto=proyecto,
+                empleado=empleado,
+                estado='pendiente'
+            ).order_by('orden')
+            
+            for index, t in enumerate(tareas, 1):
+                if t.orden != index:
+                    t.orden = index
+                    t.save(update_fields=['orden'])
 
     
 
 # API personalizada para actualizar tareas
-@method_decorator(csrf_exempt, name='dispatch')
+@extend_schema(tags=['Tareas'])
 class ActualizarTareaEmpleadoAPIView(APIView):
-    permission_classes = [AllowAny]  # Cambia esto según tus necesidades de autenticación
-
     def post(self, request, *args, **kwargs):
-        serializer = ActualizarTareaSerializer(
-            data=request.data,
-            context={'request': request}
-        )
-
+        serializer = ActualizarTareaSerializer(data=request.data)
+        
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -95,35 +101,43 @@ class ActualizarTareaEmpleadoAPIView(APIView):
                 nuevo_estado = data['nuevo_estado']
                 nuevo_orden = data.get('nuevo_orden')
 
-                # Si cambia de estado
+                # Si cambia el estado
                 if estado_anterior != nuevo_estado:
-                    # Reordenar tareas en la columna anterior
+                    # Reordenar tareas en estado anterior del mismo empleado
                     Tarea.objects.filter(
                         proyecto=tarea.proyecto,
+                        empleado=tarea.empleado,
                         estado=estado_anterior,
                         orden__gt=orden_anterior
                     ).update(orden=F('orden') - 1)
 
-                    # Calcular nuevo orden en la nueva columna
+                    # Calcular nuevo orden en nuevo estado
                     if nuevo_orden is None:
-                        nuevo_orden = Tarea.objects.filter(
+                        max_orden = Tarea.objects.filter(
                             proyecto=tarea.proyecto,
+                            empleado=tarea.empleado,
                             estado=nuevo_estado
-                        ).count() + 1
-                    
-                    # Hacer espacio en la nueva posición
+                        ).aggregate(Max('orden'))['orden__max']
+                        nuevo_orden = 1 if max_orden is None else max_orden + 1
+
+                    # Hacer espacio para la nueva posición
                     Tarea.objects.filter(
                         proyecto=tarea.proyecto,
+                        empleado=tarea.empleado,
                         estado=nuevo_estado,
                         orden__gte=nuevo_orden
                     ).update(orden=F('orden') + 1)
 
-                # Si solo cambia de posición en la misma columna
+                    tarea.estado = nuevo_estado
+                    tarea.orden = nuevo_orden
+
+                # Si solo cambia el orden en el mismo estado
                 elif nuevo_orden and nuevo_orden != orden_anterior:
                     if nuevo_orden > orden_anterior:
                         # Mover hacia abajo
                         Tarea.objects.filter(
                             proyecto=tarea.proyecto,
+                            empleado=tarea.empleado,
                             estado=estado_anterior,
                             orden__gt=orden_anterior,
                             orden__lte=nuevo_orden
@@ -132,36 +146,35 @@ class ActualizarTareaEmpleadoAPIView(APIView):
                         # Mover hacia arriba
                         Tarea.objects.filter(
                             proyecto=tarea.proyecto,
+                            empleado=tarea.empleado,
                             estado=estado_anterior,
                             orden__lt=orden_anterior,
                             orden__gte=nuevo_orden
                         ).update(orden=F('orden') + 1)
 
-                # Actualizar la tarea
-                tarea.estado = nuevo_estado
-                tarea.orden = nuevo_orden
+                    tarea.orden = nuevo_orden
+
                 tarea.save()
 
-                # Reordenar todas las tareas de la columna para asegurar orden consecutivo
-                tareas_columna = list(Tarea.objects.filter(
+                # Reordenar para asegurar secuencia consecutiva
+                tareas = Tarea.objects.filter(
                     proyecto=tarea.proyecto,
-                    estado=nuevo_estado
-                ).order_by('orden'))
-
-                for idx, t in enumerate(tareas_columna, 1):
-                    t.orden = idx
+                    empleado=tarea.empleado,
+                    estado=tarea.estado
+                ).order_by('orden')
                 
-                Tarea.objects.bulk_update(tareas_columna, ['orden'])
+                for index, t in enumerate(tareas, 1):
+                    if t.orden != index:
+                        t.orden = index
+                        t.save(update_fields=['orden'])
 
                 return Response({
-                    'message': 'Tarea actualizada exitosamente',
+                    'message': 'Tarea actualizada correctamente',
                     'tarea': {
                         'id': tarea.id,
                         'estado': tarea.estado,
-                        'orden': tarea.orden,
-                        'titulo': tarea.titulo
-                    },
-                    'total_tareas_columna': len(tareas_columna)
+                        'orden': tarea.orden
+                    }
                 })
 
         except Exception as e:
@@ -169,15 +182,6 @@ class ActualizarTareaEmpleadoAPIView(APIView):
                 {'error': str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-
-    def get(self, request, *args, **kwargs):
-        """
-        Endpoint de prueba para verificar que la API está funcionando
-        """
-        return Response({
-            'message': 'API de actualización de tareas está activa',
-            'estados_disponibles': [estado[0] for estado in Tarea.ESTADOS]
-        })
 
 
 
