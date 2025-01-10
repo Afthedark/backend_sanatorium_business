@@ -177,15 +177,14 @@ STATICFILES_DIRS = [
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 #--------Configuración de CORS--------------- 
-# Para desarrollo (permite todos los orígenes)
-CORS_ALLOW_ALL_ORIGINS = True
 
-"""  
+# Para desarrollo (permite todos los orígenes)
+#CORS_ALLOW_ALL_ORIGINS = True
+
+  
 # O para producción (especifica los orígenes permitidos)
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",  # Tu frontend en desarrollo
     "http://localhost:5173",  # Si usas Vite
-    "https://tudominio.com",  # Tu frontend en producción
+    "https://backend-sanatorium-business.onrender.com",  # Tu frontend en producción
 ]
-"""
-
