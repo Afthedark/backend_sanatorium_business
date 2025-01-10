@@ -2,6 +2,8 @@ pip install virtualenv
 
 python -m venv nombre_entorno
 
+python -m venv venv
+
 nombre_entorno\Scripts\activate 
 
 

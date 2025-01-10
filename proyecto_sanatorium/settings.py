@@ -74,12 +74,14 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_extensions',
     'drf_spectacular', # para swagger
+    'corsheaders', # para cors
 
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',  # WhiteNoise middleware
+    'corsheaders.middleware.CorsMiddleware',  # Para Cors
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -173,3 +175,17 @@ STATICFILES_DIRS = [
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+#--------Configuración de CORS--------------- 
+# Para desarrollo (permite todos los orígenes)
+CORS_ALLOW_ALL_ORIGINS = True
+
+"""  
+# O para producción (especifica los orígenes permitidos)
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",  # Tu frontend en desarrollo
+    "http://localhost:5173",  # Si usas Vite
+    "https://tudominio.com",  # Tu frontend en producción
+]
+"""
+
