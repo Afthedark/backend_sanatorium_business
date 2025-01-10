@@ -79,9 +79,9 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # WhiteNoise middleware
     'corsheaders.middleware.CorsMiddleware',  # Para Cors
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # WhiteNoise middleware
+    'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -176,15 +176,45 @@ STATICFILES_DIRS = [
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+
+
 #--------Configuración de CORS--------------- 
 
-# Para desarrollo (permite todos los orígenes)
-#CORS_ALLOW_ALL_ORIGINS = True
-
-  
-# O para producción (especifica los orígenes permitidos)
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",  # Tu frontend en desarrollo
-    "http://localhost:5173",  # Si usas Vite
-    "https://backend-sanatorium-business.onrender.com",  # Tu frontend en producción
+# Configuraciones adicionales de CORS
+CORS_ALLOW_CREDENTIALS = True  # Si necesitas enviar cookies
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
 ]
+
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+
+# Verifica que los orígenes incluyan tu frontend de producción
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "https://backend-sanatorium-business.onrender.com",
+    "https://sanatorium-business.onrender.com"  # Agrega tu frontend de producción
+]
+
+# También puedes agregar CSRF_TRUSTED_ORIGINS
+CSRF_TRUSTED_ORIGINS = [
+    "https://backend-sanatorium-business.onrender.com",
+    "https://sanatorium-business.onrender.com"
+]
+
+CORS_ALLOW_ALL_ORIGINS = True
