@@ -42,7 +42,7 @@ REST_FRAMEWORK = {
 }
 """
 
-#Esto es para que no se agregue un / al final
+#Esto es para que sea opcional los / al final de los endpoints
 APPEND_SLASH = False
 
 
@@ -50,7 +50,7 @@ APPEND_SLASH = False
 #1 Configura REST_FRAMEWORK
 REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
-    'TRAILING_SLASH': False,
+    'TRAILING_SLASH': False
 }
 
 
