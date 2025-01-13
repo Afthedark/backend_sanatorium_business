@@ -41,11 +41,18 @@ REST_FRAMEWORK = {
     ]
 }
 """
+
+#Esto es para que no se agregue un / al final
+APPEND_SLASH = False
+
+
 #Estos 2 son para swagger
 #1 Configura REST_FRAMEWORK
 REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'TRAILING_SLASH': False,
 }
+
 
 
 #2 Configuración de Spectacular

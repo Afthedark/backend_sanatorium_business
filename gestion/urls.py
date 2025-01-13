@@ -14,7 +14,7 @@ from .views import (
     ListarTareasProyectoAPIView,
 )
 
-router = DefaultRouter()
+router = DefaultRouter(trailing_slash=False)
 router.register('usuarios', UsuarioViewSet)
 router.register('proyectos', ProyectoViewSet)
 router.register('permisos', PermisoViewSet)
