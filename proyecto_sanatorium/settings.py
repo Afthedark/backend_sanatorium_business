@@ -31,7 +31,7 @@ SECRET_KEY = config("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config("DEBUG", cast=bool)
 
-ALLOWED_HOSTS = config("ALLOWED_HOSTS").split(",")
+ALLOWED_HOSTS = config("ALLOWED_HOSTS").split(",")  
 
 """
 
@@ -79,9 +79,9 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware',
     'corsheaders.middleware.CorsMiddleware',  # Para Cors
     'whitenoise.middleware.WhiteNoiseMiddleware',  # WhiteNoise middleware
-    'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -214,7 +214,9 @@ CORS_ALLOWED_ORIGINS = [
 # También puedes agregar CSRF_TRUSTED_ORIGINS
 CSRF_TRUSTED_ORIGINS = [
     "https://backend-sanatorium-business.onrender.com",
-    "https://sanatorium-business.onrender.com"
+    "https://sanatorium-business.onrender.com",
+    "http://localhost:3000",
+    "http://localhost:5173"
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True
