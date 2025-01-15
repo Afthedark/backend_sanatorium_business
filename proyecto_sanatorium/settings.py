@@ -50,9 +50,6 @@ APPEND_SLASH = True
 #1 Configura REST_FRAMEWORK
 REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',  # Permitir acceso a todos los usuarios REVISAR
-    ]
 }
 
 
@@ -187,9 +184,17 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 
-#--------Configuración de CORS--------------- 
+# -----------CORS Configuration-------------
+CORS_ALLOW_ALL_ORIGINS = True  # Solo usar en desarrollo
 
-# Configuraciones adicionales de CORS
+# O para producción, especifica los orígenes permitidos:
+# CORS_ALLOWED_ORIGINS = [
+#     "http://localhost:3000",  # React/Next.js desarrollo
+#     "http://localhost:8080",  # Vue.js desarrollo
+#     "https://tudominio.com",  # Tu dominio de producción
+# ]
+
+# Configuraciones opcionales adicionales
 CORS_ALLOW_CREDENTIALS = True  # Si necesitas enviar cookies
 CORS_ALLOW_METHODS = [
     'DELETE',
@@ -199,7 +204,6 @@ CORS_ALLOW_METHODS = [
     'POST',
     'PUT',
 ]
-
 CORS_ALLOW_HEADERS = [
     'accept',
     'accept-encoding',
@@ -212,33 +216,4 @@ CORS_ALLOW_HEADERS = [
     'x-requested-with',
 ]
 
-# Elimina todas las configuraciones CORS anteriores y usa estas:
 
-# Permitir todos los orígenes
-CORS_ALLOW_ALL_ORIGINS = True
-
-# Configuraciones básicas de CORS
-CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_METHODS = [
-    'DELETE',
-    'GET',
-    'OPTIONS',
-    'PATCH',
-    'POST',
-    'PUT',
-]
-
-CORS_ALLOW_HEADERS = [
-    'accept',
-    'accept-encoding',
-    'authorization',
-    'content-type',
-    'dnt',
-    'origin',
-    'user-agent',
-    'x-csrftoken',
-    'x-requested-with',
-]
-
-# Desactiva la lista de orígenes específicos
-# CORS_ALLOWED_ORIGINS = [...] # Comenta o elimina esta línea
