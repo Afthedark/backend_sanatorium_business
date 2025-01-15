@@ -212,21 +212,33 @@ CORS_ALLOW_HEADERS = [
     'x-requested-with',
 ]
 
-# Verifica que los orígenes incluyan tu frontend de producción
-"""  
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://localhost:5173",
-    "https://backend-sanatorium-business.onrender.com",
-    "https://sanatorium-business.onrender.com"  # Agrega tu frontend de producción
-]
-"""
-# También puedes agregar CSRF_TRUSTED_ORIGINS
-CSRF_TRUSTED_ORIGINS = [
-    "https://backend-sanatorium-business.onrender.com",
-    "https://sanatorium-business.onrender.com",
-    "http://localhost:3000",
-    "http://localhost:5173"
+# Elimina todas las configuraciones CORS anteriores y usa estas:
+
+# Permitir todos los orígenes
+CORS_ALLOW_ALL_ORIGINS = True
+
+# Configuraciones básicas de CORS
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
 ]
 
-#CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+
+# Desactiva la lista de orígenes específicos
+# CORS_ALLOWED_ORIGINS = [...] # Comenta o elimina esta línea
