@@ -85,8 +85,9 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
     'corsheaders.middleware.CorsMiddleware',  # Para Cors
+    'django.middleware.security.SecurityMiddleware',
+    
     'whitenoise.middleware.WhiteNoiseMiddleware',  # WhiteNoise middleware
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -185,17 +186,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 # -----------CORS Configuration-------------
-CORS_ALLOW_ALL_ORIGINS = True  # Solo usar en desarrollo
+# CORS Configuration
+CORS_ORIGIN_ALLOW_ALL = True  # Esta es la versión más actual de CORS_ALLOW_ALL_ORIGINS
+CORS_ALLOW_CREDENTIALS = True
 
-# O para producción, especifica los orígenes permitidos:
-# CORS_ALLOWED_ORIGINS = [
-#     "http://localhost:3000",  # React/Next.js desarrollo
-#     "http://localhost:8080",  # Vue.js desarrollo
-#     "https://tudominio.com",  # Tu dominio de producción
-# ]
-
-# Configuraciones opcionales adicionales
-CORS_ALLOW_CREDENTIALS = True  # Si necesitas enviar cookies
+# Configuración adicional importante
 CORS_ALLOW_METHODS = [
     'DELETE',
     'GET',
@@ -204,6 +199,7 @@ CORS_ALLOW_METHODS = [
     'POST',
     'PUT',
 ]
+
 CORS_ALLOW_HEADERS = [
     'accept',
     'accept-encoding',
@@ -216,4 +212,10 @@ CORS_ALLOW_HEADERS = [
     'x-requested-with',
 ]
 
+# Añade estas configuraciones adicionales
+CORS_EXPOSE_HEADERS = ['Content-Type', 'X-CSRFToken']
+CORS_PREFLIGHT_MAX_AGE = 86400  # 24 horas
+CORS_REPLACE_HTTPS_REFERER = True
 
+# Deshabilita la protección CSRF para las APIs si es necesario
+CSRF_TRUSTED_ORIGINS = ['https://backend-sanatorium-business.onrender.com']
