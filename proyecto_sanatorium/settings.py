@@ -50,6 +50,9 @@ APPEND_SLASH = True
 #1 Configura REST_FRAMEWORK
 REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.AllowAny',  # Permitir acceso a todos los usuarios REVISAR
+    ]
 }
 
 
@@ -210,13 +213,14 @@ CORS_ALLOW_HEADERS = [
 ]
 
 # Verifica que los orígenes incluyan tu frontend de producción
+"""  
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:5173",
     "https://backend-sanatorium-business.onrender.com",
     "https://sanatorium-business.onrender.com"  # Agrega tu frontend de producción
 ]
-
+"""
 # También puedes agregar CSRF_TRUSTED_ORIGINS
 CSRF_TRUSTED_ORIGINS = [
     "https://backend-sanatorium-business.onrender.com",
