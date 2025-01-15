@@ -10,6 +10,22 @@ class UsuarioSerializer(serializers.ModelSerializer):
         model = Usuario
         fields = '__all__'
 
+# Nuevo serializer para proyecto simplificado
+class ProyectoSimplificadoSerializer(serializers.ModelSerializer):
+    encargado = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Proyecto
+        fields = ['id', 'nombre', 'descripcion', 'estado', 'encargado']
+    
+    def get_encargado(self, obj):
+        return {
+            'id': obj.encargado.id,
+            'nombre': obj.encargado.nombre,
+            'email': obj.encargado.email,
+            'rol': obj.encargado.rol
+        }
+
 class ProyectoSerializer(serializers.ModelSerializer):
     empleados = serializers.PrimaryKeyRelatedField(
         many=True,
@@ -25,49 +41,36 @@ class PermisoSerializer(serializers.ModelSerializer):
         model = Permiso
         fields = '__all__'
 
+
+# Serializer actualizado para tareas
 class TareaSerializer(serializers.ModelSerializer):
-    """
-    class Meta:
-        model = Tarea
-        fields = '__all__'
-    """
-    estado = serializers.CharField(read_only=True)  # Aseguramos que se muestre en la respuesta
-    orden = serializers.IntegerField(read_only=True)  # Aseguramos que se muestre en la respuesta
+    empleado = serializers.SerializerMethodField()
+    proyecto = ProyectoSimplificadoSerializer(read_only=True)
 
     class Meta:
         model = Tarea
         fields = [
-            'id', 
-            'titulo', 
-            'descripcion', 
-            'proyecto', 
-            'fecha', 
-            'horas_invertidas', 
-            'empleado',
+            'id',
+            'titulo',
+            'descripcion',
+            'fecha',
+            'horas_invertidas',
+            'estado',
+            'orden',
             'archivo',
-            'estado',  # Incluimos explícitamente
-            'orden',   # Incluimos explícitamente
+            'empleado',
+            'proyecto',
             'created_at',
             'updated_at'
         ]
-        read_only_fields = ['estado', 'orden']  # Marcamos como solo lectura
+        read_only_fields = ['estado', 'orden']
 
-    def to_representation(self, instance):
-        """
-        Asegura que estado y orden siempre se muestren en la respuesta
-        """
-        representation = super().to_representation(instance)
-        representation['estado'] = instance.estado
-        representation['orden'] = instance.orden
-        return representation
-
-    def validate(self, data):
-        # Asegurarnos de que los campos requeridos estén presentes
-        required_fields = ['titulo', 'descripcion', 'proyecto', 'fecha', 'horas_invertidas', 'empleado']
-        for field in required_fields:
-            if field not in data:
-                raise serializers.ValidationError({field: "Este campo es requerido."})
-        return data
+    def get_empleado(self, obj):
+        return {
+            'id': obj.empleado.id,
+            'nombre': obj.empleado.nombre,
+            'email': obj.empleado.email
+        }
     
     
 
