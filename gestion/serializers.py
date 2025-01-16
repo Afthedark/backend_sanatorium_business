@@ -44,26 +44,32 @@ class PermisoSerializer(serializers.ModelSerializer):
 
 # Serializer actualizado para tareas
 class TareaSerializer(serializers.ModelSerializer):
-    empleado = serializers.SerializerMethodField()
-    proyecto = ProyectoSimplificadoSerializer(read_only=True)
-
+    empleado = serializers.SerializerMethodField(read_only=True)
+    proyecto_info = ProyectoSimplificadoSerializer(source='proyecto', read_only=True)
+    
     class Meta:
         model = Tarea
         fields = [
             'id',
             'titulo',
             'descripcion',
+            'proyecto',  # Campo para crear/actualizar
+            'proyecto_info',  # Campo para mostrar info del proyecto
             'fecha',
             'horas_invertidas',
             'estado',
             'orden',
             'archivo',
-            'empleado',
-            'proyecto',
+            'empleado_id',  # Campo para crear/actualizar
+            'empleado',  # Campo para mostrar info del empleado
             'created_at',
             'updated_at'
         ]
-        read_only_fields = ['estado', 'orden']
+        read_only_fields = ['estado', 'orden', 'empleado', 'proyecto_info']
+        extra_kwargs = {
+            'empleado_id': {'source': 'empleado', 'write_only': True},
+            'proyecto': {'write_only': True}
+        }
 
     def get_empleado(self, obj):
         return {
@@ -71,9 +77,15 @@ class TareaSerializer(serializers.ModelSerializer):
             'nombre': obj.empleado.nombre,
             'email': obj.empleado.email
         }
-    
-    
 
+    def validate(self, data):
+        required_fields = ['titulo', 'descripcion', 'proyecto', 'fecha', 'horas_invertidas', 'empleado']
+        for field in required_fields:
+            if field not in data:
+                raise serializers.ValidationError({field: "Este campo es requerido."})
+        return data         
+    
+    
 class ActualizarTareaSerializer(serializers.Serializer):
     """
     Serializador para actualizar el estado y orden de una tarea.
