@@ -320,18 +320,20 @@ class ListarProyectosAsignadosEmpleadoAPIView(APIView):
 class ListarTareasEmpleadoAPIView(APIView):
     def get(self, request, empleado_id):
         try:
-            # Verificar que el empleado existe
             empleado = Usuario.objects.get(id=empleado_id, rol='empleado')
             
-            # Obtener todas las tareas del empleado
+            # Usamos select_related para cargar los datos del proyecto eficientemente
             tareas = Tarea.objects.filter(
                 empleado=empleado
-            ).select_related('empleado', 'proyecto').order_by('created_at')
+            ).select_related(
+                'empleado', 
+                'proyecto', 
+                'proyecto__encargado'  # Para cargar también los datos del encargado del proyecto
+            ).order_by('created_at')
             
-            # Serializar las tareas directamente
-            serializer = TareasEmpleadoSerializer(tareas, many=True)
+            # Usar el TareaSerializer que ya incluye la información del proyecto
+            serializer = TareaSerializer(tareas, many=True)
             
-            # Retornar la lista de tareas directamente
             return Response(serializer.data)
             
         except Usuario.DoesNotExist:

@@ -44,8 +44,8 @@ class PermisoSerializer(serializers.ModelSerializer):
 
 # Serializer actualizado para tareas
 class TareaSerializer(serializers.ModelSerializer):
-    empleado = serializers.SerializerMethodField(read_only=True)
-    proyecto_info = ProyectoSimplificadoSerializer(source='proyecto', read_only=True)
+    empleado = serializers.SerializerMethodField()
+    proyecto = ProyectoSimplificadoSerializer()  # Cambiado aquí
     
     class Meta:
         model = Tarea
@@ -53,23 +53,17 @@ class TareaSerializer(serializers.ModelSerializer):
             'id',
             'titulo',
             'descripcion',
-            'proyecto',  # Campo para crear/actualizar
-            'proyecto_info',  # Campo para mostrar info del proyecto
             'fecha',
             'horas_invertidas',
             'estado',
             'orden',
             'archivo',
-            'empleado_id',  # Campo para crear/actualizar
-            'empleado',  # Campo para mostrar info del empleado
+            'empleado',
+            'proyecto',
             'created_at',
             'updated_at'
         ]
-        read_only_fields = ['estado', 'orden', 'empleado', 'proyecto_info']
-        extra_kwargs = {
-            'empleado_id': {'source': 'empleado', 'write_only': True},
-            'proyecto': {'write_only': True}
-        }
+        read_only_fields = ['estado', 'orden']
 
     def get_empleado(self, obj):
         return {
@@ -83,7 +77,14 @@ class TareaSerializer(serializers.ModelSerializer):
         for field in required_fields:
             if field not in data:
                 raise serializers.ValidationError({field: "Este campo es requerido."})
-        return data         
+        return data
+
+    def create(self, validated_data):
+        # Manejar la creación cuando el proyecto viene como ID
+        proyecto_id = validated_data.get('proyecto')
+        if isinstance(proyecto_id, int):
+            validated_data['proyecto'] = Proyecto.objects.get(id=proyecto_id)
+        return super().create(validated_data)      
     
     
 class ActualizarTareaSerializer(serializers.Serializer):
