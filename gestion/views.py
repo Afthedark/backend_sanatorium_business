@@ -326,41 +326,13 @@ class ListarTareasEmpleadoAPIView(APIView):
             # Obtener todas las tareas del empleado
             tareas = Tarea.objects.filter(
                 empleado=empleado
-            ).order_by('proyecto', 'estado', 'orden')
+            ).select_related('empleado', 'proyecto').order_by('created_at')
             
+            # Serializar las tareas directamente
             serializer = TareasEmpleadoSerializer(tareas, many=True)
             
-            # Agrupar tareas por proyecto
-            tareas_por_proyecto = {}
-            
-            for tarea in tareas:
-                proyecto_id = tarea.proyecto.id
-                if proyecto_id not in tareas_por_proyecto:
-                    tareas_por_proyecto[proyecto_id] = {
-                        'proyecto': {
-                            'id': tarea.proyecto.id,
-                            'nombre': tarea.proyecto.nombre,
-                        },
-                        'tareas': {
-                            'pendiente': [],
-                            'progreso': [],
-                            'completada': []
-                        }
-                    }
-                
-                # Serializar la tarea
-                tarea_data = TareasEmpleadoSerializer(tarea).data
-                tareas_por_proyecto[proyecto_id]['tareas'][tarea.estado].append(tarea_data)
-            
-            return Response({
-                'empleado': {
-                    'id': empleado.id,
-                    'nombre': empleado.nombre,
-                    'email': empleado.email
-                },
-                'total_tareas': tareas.count(),
-                'proyectos': list(tareas_por_proyecto.values())
-            })
+            # Retornar la lista de tareas directamente
+            return Response(serializer.data)
             
         except Usuario.DoesNotExist:
             return Response(
@@ -424,43 +396,12 @@ class ListarTareasEmpleadosEncargadoAPIView(APIView):
             # Obtener todas las tareas de estos empleados
             tareas = Tarea.objects.filter(
                 empleado__in=empleados
-            ).select_related('empleado', 'proyecto').order_by('empleado', 'estado', 'orden')
+            ).select_related('empleado', 'proyecto').order_by('created_at')
             
-            # Agrupar tareas por empleado
-            tareas_por_empleado = {}
+            # Serializar las tareas directamente
+            serializer = TareasEmpleadosEncargadoSerializer(tareas, many=True)
             
-            for tarea in tareas:
-                empleado_id = tarea.empleado.id
-                if empleado_id not in tareas_por_empleado:
-                    tareas_por_empleado[empleado_id] = {
-                        'empleado': {
-                            'id': tarea.empleado.id,
-                            'nombre': tarea.empleado.nombre,
-                            'email': tarea.empleado.email
-                        },
-                        'total_tareas': 0,
-                        'tareas': {
-                            'pendiente': [],
-                            'progreso': [],
-                            'completada': []
-                        }
-                    }
-                
-                # Serializar la tarea
-                tarea_data = TareasEmpleadosEncargadoSerializer(tarea).data
-                tareas_por_empleado[empleado_id]['tareas'][tarea.estado].append(tarea_data)
-                tareas_por_empleado[empleado_id]['total_tareas'] += 1
-            
-            return Response({
-                'encargado': {
-                    'id': encargado.id,
-                    'nombre': encargado.nombre,
-                    'email': encargado.email
-                },
-                'total_empleados': len(empleados),
-                'total_tareas': tareas.count(),
-                'empleados': list(tareas_por_empleado.values())
-            })
+            return Response(serializer.data)
             
         except Usuario.DoesNotExist:
             return Response(
