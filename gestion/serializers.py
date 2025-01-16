@@ -250,6 +250,7 @@ class TareasEmpleadoSerializer(serializers.ModelSerializer):
 
 class TareasProyectoSerializer(serializers.ModelSerializer):
     empleado = serializers.SerializerMethodField()
+    proyecto = ProyectoSimplificadoSerializer(read_only=True)
     
     class Meta:
         model = Tarea
@@ -260,7 +261,10 @@ class TareasProyectoSerializer(serializers.ModelSerializer):
             'fecha',
             'horas_invertidas',
             'estado',
+            'orden',  # Añadido el campo orden
+            'archivo',
             'empleado',
+            'proyecto',
             'created_at',
             'updated_at'
         ]

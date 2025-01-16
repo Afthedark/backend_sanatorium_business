@@ -350,13 +350,13 @@ class ListarTareasEmpleadoAPIView(APIView):
 
 
 class ListarTareasProyectoAPIView(APIView):
-    def get(self, request, proyecto_id):
+   def get(self, request, proyecto_id):
         try:
             proyecto = Proyecto.objects.get(id=proyecto_id)
             
             tareas = Tarea.objects.filter(
                 proyecto=proyecto
-            ).order_by('-created_at')
+            ).select_related('empleado', 'proyecto').order_by('estado', 'orden')  # Ordenado por estado y orden
             
             serializer = TareasProyectoSerializer(tareas, many=True)
             
