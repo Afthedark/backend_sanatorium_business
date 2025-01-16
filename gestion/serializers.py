@@ -270,3 +270,32 @@ class TareasProyectoSerializer(serializers.ModelSerializer):
             'nombre': obj.empleado.nombre,
             'email': obj.empleado.email
         }
+    
+
+class TareasEmpleadosEncargadoSerializer(serializers.ModelSerializer):
+    empleado = serializers.SerializerMethodField()
+    proyecto = ProyectoSimplificadoSerializer(read_only=True)
+    
+    class Meta:
+        model = Tarea
+        fields = [
+            'id',
+            'titulo',
+            'descripcion',
+            'fecha',
+            'horas_invertidas',
+            'estado',
+            'orden',
+            'archivo',
+            'empleado',
+            'proyecto',
+            'created_at',
+            'updated_at'
+        ]
+    
+    def get_empleado(self, obj):
+        return {
+            'id': obj.empleado.id,
+            'nombre': obj.empleado.nombre,
+            'email': obj.empleado.email
+        }

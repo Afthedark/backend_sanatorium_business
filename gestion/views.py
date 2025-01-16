@@ -20,6 +20,7 @@ from .serializers import (
     ProyectosAsignadosEmpleadoSerializer,
     TareasEmpleadoSerializer,
     TareasProyectoSerializer,
+    TareasEmpleadosEncargadoSerializer,
 )
 
 from django.db.models import Max
@@ -406,4 +407,68 @@ class ListarTareasProyectoAPIView(APIView):
             return Response(
                 {'error': 'Proyecto no encontrado'},
                 status=status.HTTP_404_NOT_FOUND
+            )
+
+
+
+# views.py
+class ListarTareasEmpleadosEncargadoAPIView(APIView):
+    def get(self, request, encargado_id):
+        try:
+            # Verificar que el encargado existe
+            encargado = Usuario.objects.get(id=encargado_id, rol='encargado')
+            
+            # Obtener todos los empleados del encargado
+            empleados = Usuario.objects.filter(encargado=encargado, rol='empleado')
+            
+            # Obtener todas las tareas de estos empleados
+            tareas = Tarea.objects.filter(
+                empleado__in=empleados
+            ).select_related('empleado', 'proyecto').order_by('empleado', 'estado', 'orden')
+            
+            # Agrupar tareas por empleado
+            tareas_por_empleado = {}
+            
+            for tarea in tareas:
+                empleado_id = tarea.empleado.id
+                if empleado_id not in tareas_por_empleado:
+                    tareas_por_empleado[empleado_id] = {
+                        'empleado': {
+                            'id': tarea.empleado.id,
+                            'nombre': tarea.empleado.nombre,
+                            'email': tarea.empleado.email
+                        },
+                        'total_tareas': 0,
+                        'tareas': {
+                            'pendiente': [],
+                            'progreso': [],
+                            'completada': []
+                        }
+                    }
+                
+                # Serializar la tarea
+                tarea_data = TareasEmpleadosEncargadoSerializer(tarea).data
+                tareas_por_empleado[empleado_id]['tareas'][tarea.estado].append(tarea_data)
+                tareas_por_empleado[empleado_id]['total_tareas'] += 1
+            
+            return Response({
+                'encargado': {
+                    'id': encargado.id,
+                    'nombre': encargado.nombre,
+                    'email': encargado.email
+                },
+                'total_empleados': len(empleados),
+                'total_tareas': tareas.count(),
+                'empleados': list(tareas_por_empleado.values())
+            })
+            
+        except Usuario.DoesNotExist:
+            return Response(
+                {'error': 'Encargado no encontrado o no tiene el rol correcto'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
