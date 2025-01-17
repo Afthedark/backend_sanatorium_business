@@ -44,46 +44,47 @@ class PermisoSerializer(serializers.ModelSerializer):
 
 # Serializer actualizado para tareas
 class TareaSerializer(serializers.ModelSerializer):
-    empleado = serializers.SerializerMethodField()
-    proyecto = ProyectoSimplificadoSerializer(read_only=True)
-    
+    empleado_info = serializers.SerializerMethodField(source='empleado', read_only=True)
+    proyecto_info = ProyectoSimplificadoSerializer(source='proyecto', read_only=True)
+
     class Meta:
         model = Tarea
         fields = [
             'id',
             'titulo',
             'descripcion',
+            'proyecto',
             'fecha',
             'horas_invertidas',
+            'empleado',
             'estado',
             'orden',
             'archivo',
-            'empleado',
-            'proyecto',
+            'empleado_info',
+            'proyecto_info',
             'created_at',
             'updated_at'
         ]
         read_only_fields = ['estado', 'orden']
 
-    def get_empleado(self, obj):
+    def get_empleado_info(self, obj):
         return {
             'id': obj.empleado.id,
             'nombre': obj.empleado.nombre,
             'email': obj.empleado.email
         }
 
-    def to_internal_value(self, data):
-        # Este método maneja la conversión de los datos de entrada
-        if 'empleado' in data and isinstance(data['empleado'], int):
-            data['empleado_id'] = data['empleado']
-        if 'proyecto' in data and isinstance(data['proyecto'], int):
-            data['proyecto_id'] = data['proyecto']
-        return super().to_internal_value(data)
-
     def create(self, validated_data):
-        # Asignar estado pendiente por defecto
         validated_data['estado'] = 'pendiente'
         return super().create(validated_data)
+
+    def to_representation(self, instance):
+        # Personalizar la respuesta
+        data = super().to_representation(instance)
+        # Reemplazar la información básica con la información detallada
+        data['empleado'] = data.pop('empleado_info')
+        data['proyecto'] = data.pop('proyecto_info')
+        return data
         
     
     
