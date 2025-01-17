@@ -415,3 +415,40 @@ class ListarTareasEmpleadosEncargadoAPIView(APIView):
                 {'error': str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
+class ListarTareasUsuarioProyectoAPIView(APIView):
+    def get(self, request, empleado_id, proyecto_id):
+        try:
+            # Verificar que tanto el empleado como el proyecto existen
+            empleado = Usuario.objects.get(id=empleado_id, rol='empleado')
+            proyecto = Proyecto.objects.get(id=proyecto_id)
+            
+            # Verificar que el empleado está asignado al proyecto
+            if not proyecto.empleados.filter(id=empleado_id).exists():
+                return Response(
+                    {'error': 'El empleado no está asignado a este proyecto'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Obtener las tareas
+            tareas = Tarea.objects.filter(
+                empleado=empleado,
+                proyecto=proyecto
+            ).select_related('empleado', 'proyecto').order_by('estado', 'orden')
+            
+            # Usar el TareaSerializer existente
+            serializer = TareaSerializer(tareas, many=True)
+            
+            return Response(serializer.data)
+            
+        except Usuario.DoesNotExist:
+            return Response(
+                {'error': 'Empleado no encontrado'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Proyecto.DoesNotExist:
+            return Response(
+                {'error': 'Proyecto no encontrado'},
+                status=status.HTTP_404_NOT_FOUND
+            )

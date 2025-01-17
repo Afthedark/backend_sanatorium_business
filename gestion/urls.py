@@ -13,6 +13,7 @@ from .views import (
     ListarTareasEmpleadoAPIView,
     ListarTareasProyectoAPIView,
     ListarTareasEmpleadosEncargadoAPIView,
+    ListarTareasUsuarioProyectoAPIView,
 )
 
 router = DefaultRouter()
@@ -43,6 +44,9 @@ custom_urls = [
     path('tareas-empleados-encargado/<int:encargado_id>/', 
          ListarTareasEmpleadosEncargadoAPIView.as_view(), 
          name='tareas-empleados-encargado'),
+    path('tareas-usuario-proyecto/<int:empleado_id>/<int:proyecto_id>/', 
+     ListarTareasUsuarioProyectoAPIView.as_view(), 
+     name='tareas-usuario-proyecto'),
 
 ]
 
