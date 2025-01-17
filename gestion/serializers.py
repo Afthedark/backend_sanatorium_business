@@ -45,7 +45,9 @@ class PermisoSerializer(serializers.ModelSerializer):
 # Serializer actualizado para tareas
 class TareaSerializer(serializers.ModelSerializer):
     empleado = serializers.SerializerMethodField()
-    proyecto = ProyectoSimplificadoSerializer()  # Cambiado aquí
+    proyecto = ProyectoSimplificadoSerializer(read_only=True)
+    empleado_id = serializers.IntegerField(write_only=True)  # Para crear tareas
+    proyecto_id = serializers.IntegerField(write_only=True, source='proyecto')  # Para crear tareas
     
     class Meta:
         model = Tarea
@@ -60,10 +62,12 @@ class TareaSerializer(serializers.ModelSerializer):
             'archivo',
             'empleado',
             'proyecto',
+            'empleado_id',  # Campo para crear
+            'proyecto_id',  # Campo para crear
             'created_at',
             'updated_at'
         ]
-        read_only_fields = ['estado', 'orden']
+        read_only_fields = ['estado', 'orden', 'empleado', 'proyecto']
 
     def get_empleado(self, obj):
         return {
@@ -72,19 +76,11 @@ class TareaSerializer(serializers.ModelSerializer):
             'email': obj.empleado.email
         }
 
-    def validate(self, data):
-        required_fields = ['titulo', 'descripcion', 'proyecto', 'fecha', 'horas_invertidas', 'empleado']
-        for field in required_fields:
-            if field not in data:
-                raise serializers.ValidationError({field: "Este campo es requerido."})
-        return data
-
     def create(self, validated_data):
-        # Manejar la creación cuando el proyecto viene como ID
-        proyecto_id = validated_data.get('proyecto')
-        if isinstance(proyecto_id, int):
-            validated_data['proyecto'] = Proyecto.objects.get(id=proyecto_id)
-        return super().create(validated_data)      
+        # Asignar estado pendiente por defecto
+        validated_data['estado'] = 'pendiente'
+        return super().create(validated_data)
+        
     
     
 class ActualizarTareaSerializer(serializers.Serializer):
