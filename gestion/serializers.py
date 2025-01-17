@@ -42,7 +42,7 @@ class PermisoSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-# Serializer actualizado para tareas
+# Serializer para tareas crear y actualizar
 class TareaSerializer(serializers.ModelSerializer):
     empleado_info = serializers.SerializerMethodField(source='empleado', read_only=True)
     proyecto_info = ProyectoSimplificadoSerializer(source='proyecto', read_only=True)
