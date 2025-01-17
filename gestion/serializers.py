@@ -46,8 +46,6 @@ class PermisoSerializer(serializers.ModelSerializer):
 class TareaSerializer(serializers.ModelSerializer):
     empleado = serializers.SerializerMethodField()
     proyecto = ProyectoSimplificadoSerializer(read_only=True)
-    empleado_id = serializers.IntegerField(write_only=True)  # Para crear tareas
-    proyecto_id = serializers.IntegerField(write_only=True, source='proyecto')  # Para crear tareas
     
     class Meta:
         model = Tarea
@@ -62,12 +60,10 @@ class TareaSerializer(serializers.ModelSerializer):
             'archivo',
             'empleado',
             'proyecto',
-            'empleado_id',  # Campo para crear
-            'proyecto_id',  # Campo para crear
             'created_at',
             'updated_at'
         ]
-        read_only_fields = ['estado', 'orden', 'empleado', 'proyecto']
+        read_only_fields = ['estado', 'orden']
 
     def get_empleado(self, obj):
         return {
@@ -75,6 +71,14 @@ class TareaSerializer(serializers.ModelSerializer):
             'nombre': obj.empleado.nombre,
             'email': obj.empleado.email
         }
+
+    def to_internal_value(self, data):
+        # Este método maneja la conversión de los datos de entrada
+        if 'empleado' in data and isinstance(data['empleado'], int):
+            data['empleado_id'] = data['empleado']
+        if 'proyecto' in data and isinstance(data['proyecto'], int):
+            data['proyecto_id'] = data['proyecto']
+        return super().to_internal_value(data)
 
     def create(self, validated_data):
         # Asignar estado pendiente por defecto
