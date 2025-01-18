@@ -1,7 +1,7 @@
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
+#from rest_framework.response import Response
+#from rest_framework import status
 from rest_framework.permissions import AllowAny
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
@@ -38,34 +38,32 @@ from rest_framework import status
 
 
 class LoginView(TokenObtainPairView):
-    serializer_class = LoginSerializer
+    serializer_class = CustomTokenObtainPairSerializer
 
     def post(self, request, *args, **kwargs):
         try:
-            # Obtener email y password del request
-            email = request.data.get('email', '')
-            password = request.data.get('password', '')
+            # Obtener el email y convertirlo a minúsculas
+            data = request.data.copy()
+            if 'email' in data:
+                data['email'] = data['email'].lower()
             
-            # Verificar que se proporcionaron las credenciales
-            if not email or not password:
+            serializer = self.get_serializer(data=data)
+            
+            if serializer.is_valid():
+                return Response(serializer.validated_data)
+            else:
                 return Response(
-                    {'error': 'Se requiere email y password'},
-                    status=status.HTTP_400_BAD_REQUEST
+                    {"error": "Credenciales inválidas"},
+                    status=status.HTTP_401_UNAUTHORIZED
                 )
-            
-            # Intentar autenticar
-            response = super().post(request, *args, **kwargs)
-            
-            return Response(
-                response.data,
-                status=status.HTTP_200_OK
-            )
-            
+                
         except Exception as e:
             return Response(
-                {'error': 'Credenciales inválidas'},
-                status=status.HTTP_401_UNAUTHORIZED
+                {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
 
 
 # Vistas para CRUD

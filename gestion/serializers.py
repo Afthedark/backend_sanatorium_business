@@ -6,23 +6,27 @@ from django.db import transaction
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer # Para JWT
 
 
-class LoginSerializer(TokenObtainPairSerializer):
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
-        # Obtener los tokens
+        # Obtén los tokens
         data = super().validate(attrs)
         
-        # Añadir datos del usuario
+        # Obtén el usuario actual
         user = self.user
-        data['user'] = {
-            'id': user.id,
-            'nombre': user.nombre,
-            'email': user.email,
-            'rol': user.rol,
-            'created_at': user.created_at,
-            'updated_at': user.updated_at
-        }
         
-        # Si el usuario es empleado, añadir datos del encargado
+        # Añade los datos del usuario a la respuesta
+        data.update({
+            'user': {
+                'id': user.id,
+                'nombre': user.nombre,
+                'email': user.email,
+                'rol': user.rol,
+                'created_at': user.created_at,
+                'updated_at': user.updated_at
+            }
+        })
+        
+        # Si el usuario es un empleado, añade información del encargado
         if user.rol == 'empleado' and user.encargado:
             data['user']['encargado'] = {
                 'id': user.encargado.id,
@@ -30,7 +34,7 @@ class LoginSerializer(TokenObtainPairSerializer):
                 'email': user.encargado.email,
                 'rol': user.encargado.rol
             }
-            
+        
         return data
 
 
