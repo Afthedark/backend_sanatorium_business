@@ -21,7 +21,7 @@ from .serializers import (
     TareasEmpleadoSerializer,
     TareasProyectoSerializer,
     TareasEmpleadosEncargadoSerializer,
-    LoginSerializer,
+    CustomTokenObtainPairSerializer,
 )
 
 from django.db.models import Max
