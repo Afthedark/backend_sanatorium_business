@@ -21,6 +21,7 @@ from .serializers import (
     TareasEmpleadoSerializer,
     TareasProyectoSerializer,
     TareasEmpleadosEncargadoSerializer,
+    LoginSerializer,
 )
 
 from django.db.models import Max
@@ -28,6 +29,44 @@ import logging
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 
 logger = logging.getLogger(__name__)
+
+# JWT
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework.response import Response
+from rest_framework import status
+# JWT
+
+
+class LoginView(TokenObtainPairView):
+    serializer_class = LoginSerializer
+
+    def post(self, request, *args, **kwargs):
+        try:
+            # Obtener email y password del request
+            email = request.data.get('email', '')
+            password = request.data.get('password', '')
+            
+            # Verificar que se proporcionaron las credenciales
+            if not email or not password:
+                return Response(
+                    {'error': 'Se requiere email y password'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Intentar autenticar
+            response = super().post(request, *args, **kwargs)
+            
+            return Response(
+                response.data,
+                status=status.HTTP_200_OK
+            )
+            
+        except Exception as e:
+            return Response(
+                {'error': 'Credenciales inválidas'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
 
 # Vistas para CRUD
 class UsuarioViewSet(ModelViewSet):
