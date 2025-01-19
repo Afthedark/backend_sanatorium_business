@@ -22,8 +22,8 @@ class CustomTokenObtainPairSerializer(serializers.Serializer):
             # Buscar el usuario por email
             user = Usuario.objects.get(email=email)
             
-            # Verificar la contraseña
-            if not check_password(password, user.password):
+            # Verificar la contraseña directamente sin hash
+            if user.password != password:
                 raise serializers.ValidationError({'error': 'Credenciales inválidas'})
 
             # Generar tokens
