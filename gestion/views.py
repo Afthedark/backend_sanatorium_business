@@ -28,7 +28,7 @@ from django.db.models import Max
 import logging
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(__name__) # Para el logging sirve para ver los errores
 
 # JWT
 from .serializers import CustomTokenObtainPairSerializer
@@ -71,6 +71,51 @@ class RefreshTokenView(APIView):
             return Response({'error': 'Refresh token has expired'}, status=status.HTTP_401_UNAUTHORIZED)
         except (jwt.InvalidTokenError, Usuario.DoesNotExist):
             return Response({'error': 'Invalid refresh token'}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+class UserMeView(APIView):
+    def get(self, request):
+        try:
+            # Obtener el token del header
+            auth_header = request.headers.get('Authorization')
+            if not auth_header or not auth_header.startswith('Bearer '):
+                return Response({'error': 'Token no proporcionado'}, status=status.HTTP_401_UNAUTHORIZED)
+            
+            token = auth_header.split(' ')[1]
+            
+            # Decodificar el token
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=['HS256'])
+            user_id = payload['user_id']
+            
+            # Obtener usuario y su información actualizada
+            user = Usuario.objects.get(id=user_id)
+            
+            # Preparar respuesta según el rol
+            response_data = {
+                'id': user.id,
+                'nombre': user.nombre,
+                'email': user.email,
+                'rol': user.rol,
+                'created_at': user.created_at,
+                'updated_at': user.updated_at
+            }
+            
+            # Añadir información del encargado si es empleado
+            if user.rol == 'empleado' and user.encargado:
+                response_data['encargado'] = {
+                    'id': user.encargado.id,
+                    'nombre': user.encargado.nombre,
+                    'email': user.encargado.email,
+                    'rol': user.encargado.rol
+                }
+            
+            return Response(response_data)
+            
+        except jwt.ExpiredSignatureError:
+            return Response({'error': 'Token expirado'}, status=status.HTTP_401_UNAUTHORIZED)
+        except (jwt.InvalidTokenError, Usuario.DoesNotExist):
+            return Response({'error': 'Token inválido'}, status=status.HTTP_401_UNAUTHORIZED)
+
 
 
 
