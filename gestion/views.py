@@ -1,7 +1,7 @@
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.views import APIView
-#from rest_framework.response import Response
-#from rest_framework import status
+from rest_framework.response import Response
+from rest_framework import status
 from rest_framework.permissions import AllowAny
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
@@ -31,38 +31,46 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter
 logger = logging.getLogger(__name__)
 
 # JWT
-from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework.response import Response
-from rest_framework import status
+from .serializers import CustomTokenObtainPairSerializer
+import jwt
+from django.conf import settings
 # JWT
 
 
-class LoginView(TokenObtainPairView):
-    serializer_class = CustomTokenObtainPairSerializer
+# JWT Views Login
+class LoginView(APIView):
+    def post(self, request):
+        serializer = CustomTokenObtainPairSerializer(data=request.data)
+        if serializer.is_valid():
+            return Response(serializer.validated_data)
+        return Response(serializer.errors, status=status.HTTP_401_UNAUTHORIZED)
 
-    def post(self, request, *args, **kwargs):
+# JWT Views Refrescar token
+class RefreshTokenView(APIView):
+    def post(self, request):
+        refresh_token = request.data.get('refresh')
+        if not refresh_token:
+            return Response({'error': 'Refresh token is required'}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
-            # Obtener el email y convertirlo a minúsculas
-            data = request.data.copy()
-            if 'email' in data:
-                data['email'] = data['email'].lower()
-            
-            serializer = self.get_serializer(data=data)
-            
-            if serializer.is_valid():
-                return Response(serializer.validated_data)
-            else:
-                return Response(
-                    {"error": "Credenciales inválidas"},
-                    status=status.HTTP_401_UNAUTHORIZED
-                )
-                
-        except Exception as e:
-            return Response(
-                {"error": str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            # Verificar el refresh token
+            payload = jwt.decode(refresh_token, settings.SECRET_KEY, algorithms=['HS256'])
+            user = Usuario.objects.get(id=payload['user_id'])
 
+            # Generar nuevo access token
+            access_token = jwt.encode({
+                'user_id': user.id,
+                'email': user.email,
+                'rol': user.rol,
+                'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1)
+            }, settings.SECRET_KEY, algorithm='HS256')
+
+            return Response({'access': access_token})
+
+        except jwt.ExpiredSignatureError:
+            return Response({'error': 'Refresh token has expired'}, status=status.HTTP_401_UNAUTHORIZED)
+        except (jwt.InvalidTokenError, Usuario.DoesNotExist):
+            return Response({'error': 'Invalid refresh token'}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 

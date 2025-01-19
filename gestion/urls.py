@@ -15,6 +15,7 @@ from .views import (
     ListarTareasEmpleadosEncargadoAPIView,
     ListarTareasUsuarioProyectoAPIView,
     LoginView,
+    RefreshTokenView,
 )
 
 from django.urls import path
@@ -53,8 +54,8 @@ custom_urls = [
      ListarTareasUsuarioProyectoAPIView.as_view(), 
      name='tareas-usuario-proyecto'),
      # Agregar las URLs de autenticación
-    path('login/', LoginView.as_view(), name='token_obtain_pair'),
-    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('login/', LoginView.as_view(), name='login'),
+    path('token/refresh/', RefreshTokenView.as_view(), name='token_refresh'),
 
 ]
 
