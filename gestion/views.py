@@ -89,6 +89,7 @@ class RefreshTokenView(APIView):
 
 class UserMeView(APIView):
     permission_classes = [IsAuthenticated]  # Cualquier usuario autenticado
+    
     def get(self, request):
         try:
             # Obtener el token del header
@@ -102,10 +103,10 @@ class UserMeView(APIView):
             payload = jwt.decode(token, settings.SECRET_KEY, algorithms=['HS256'])
             user_id = payload['user_id']
             
-            # Obtener usuario y su información actualizada
+            # Obtener usuario
             user = Usuario.objects.get(id=user_id)
             
-            # Preparar respuesta según el rol
+            # Preparar respuesta (solo datos del usuario)
             response_data = {
                 'id': user.id,
                 'nombre': user.nombre,
@@ -115,7 +116,7 @@ class UserMeView(APIView):
                 'updated_at': user.updated_at
             }
             
-            # Añadir información del encargado si es empleado
+            # Añadir información del encargado solo si es empleado
             if user.rol == 'empleado' and user.encargado:
                 response_data['encargado'] = {
                     'id': user.encargado.id,
