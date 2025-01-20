@@ -1,3 +1,14 @@
+# gestion/views.py
+from .permissions import (
+    IsAdminUser, 
+    IsManagerUser, 
+    IsEmployeeUser, 
+    IsManagerOrAdmin,
+
+)
+from rest_framework.permissions import IsAuthenticated
+
+
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -39,6 +50,7 @@ from django.conf import settings
 
 # JWT Views Login
 class LoginView(APIView):
+    permission_classes = []  # Sin restricciones
     def post(self, request):
         serializer = CustomTokenObtainPairSerializer(data=request.data)
         if serializer.is_valid():
@@ -47,6 +59,7 @@ class LoginView(APIView):
 
 # JWT Views Refrescar token
 class RefreshTokenView(APIView):
+    permission_classes = []  # Sin restricciones
     def post(self, request):
         refresh_token = request.data.get('refresh')
         if not refresh_token:
@@ -74,6 +87,7 @@ class RefreshTokenView(APIView):
 
 
 class UserMeView(APIView):
+    permission_classes = [IsAuthenticated]  # Cualquier usuario autenticado
     def get(self, request):
         try:
             # Obtener el token del header
@@ -121,20 +135,24 @@ class UserMeView(APIView):
 
 # Vistas para CRUD
 class UsuarioViewSet(ModelViewSet):
+    permission_classes = [IsAuthenticated, IsAdminUser]  # Permiso Solo administradores
     queryset = Usuario.objects.all()
     serializer_class = UsuarioSerializer
 
 class ProyectoViewSet(ModelViewSet):
+    permission_classes = [IsAuthenticated, IsManagerOrAdmin]  # Admins y encargados
     queryset = Proyecto.objects.all()
     serializer_class = ProyectoSerializer
 
 class PermisoViewSet(ModelViewSet):
+    permission_classes = [IsAuthenticated, IsAdminUser]  # Solo administradores
     queryset = Permiso.objects.all()
     serializer_class = PermisoSerializer
 
 
 
 class TareaViewSet(ModelViewSet):
+    permission_classes = [IsAuthenticated]  # Cualquier usuario autenticado
     queryset = Tarea.objects.all()
     serializer_class = TareaSerializer
 
@@ -176,6 +194,7 @@ class TareaViewSet(ModelViewSet):
 # API personalizada para actualizar tareas
 @extend_schema(tags=['Tareas'])
 class ActualizarTareaEmpleadoAPIView(APIView):
+    permission_classes = [IsAuthenticated]  # Cualquier usuario autenticado
     def post(self, request, *args, **kwargs):
         serializer = ActualizarTareaSerializer(data=request.data)
         
@@ -277,6 +296,7 @@ class ActualizarTareaEmpleadoAPIView(APIView):
 
 
 class RegistroEmpleadoAPIView(APIView):
+    permission_classes = [IsAuthenticated, IsManagerOrAdmin]  # Admins y encargados
     def post(self, request, *args, **kwargs):
         serializer = RegistroEmpleadoSerializer(data=request.data)
         
@@ -298,6 +318,7 @@ class RegistroEmpleadoAPIView(APIView):
 
 
 class ListarEmpleadosPorEncargadoAPIView(APIView):
+    permission_classes = [IsAuthenticated, IsManagerUser]  # Solo encargados
     def get(self, request, encargado_id):
         try:
             # Verificar que el encargado existe y es un encargado
@@ -335,6 +356,7 @@ class ListarEmpleadosPorEncargadoAPIView(APIView):
         
 
 class ListarProyectosPorEncargadoAPIView(APIView):
+    permission_classes = [IsAuthenticated, IsManagerUser]  # Solo encargados
     def get(self, request, encargado_id):
         try:
             # Verificar que el encargado existe y tiene el rol correcto
@@ -371,6 +393,7 @@ class ListarProyectosPorEncargadoAPIView(APIView):
 
 
 class ListarProyectosAsignadosEmpleadoAPIView(APIView):
+    permission_classes = [IsAuthenticated]  # Cualquier usuario autenticado
     def get(self, request, empleado_id):
         try:
             # Verificar que el empleado existe y tiene el rol correcto
@@ -408,6 +431,7 @@ class ListarProyectosAsignadosEmpleadoAPIView(APIView):
 
 
 class ListarTareasEmpleadoAPIView(APIView):
+    permission_classes = [IsAuthenticated]  # Cualquier usuario autenticado
     def get(self, request, empleado_id):
         try:
             empleado = Usuario.objects.get(id=empleado_id, rol='empleado')
@@ -440,6 +464,7 @@ class ListarTareasEmpleadoAPIView(APIView):
 
 
 class ListarTareasProyectoAPIView(APIView):
+   permission_classes = [IsAuthenticated]  # Cualquier usuario autenticado
    def get(self, request, proyecto_id):
         try:
             proyecto = Proyecto.objects.get(id=proyecto_id)
@@ -477,6 +502,7 @@ class ListarTareasProyectoAPIView(APIView):
 
 # views.py
 class ListarTareasEmpleadosEncargadoAPIView(APIView):
+    permission_classes = [IsAuthenticated, IsManagerUser]  # Solo encargados
     def get(self, request, encargado_id):
         try:
             # Verificar que el encargado existe
@@ -508,6 +534,7 @@ class ListarTareasEmpleadosEncargadoAPIView(APIView):
 
 
 class ListarTareasUsuarioProyectoAPIView(APIView):
+    permission_classes = [IsAuthenticated]  # Cualquier usuario autenticado
     def get(self, request, empleado_id, proyecto_id):
         try:
             # Verificar que tanto el empleado como el proyecto existen
