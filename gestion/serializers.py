@@ -8,6 +8,8 @@ import jwt
 import datetime
 from django.conf import settings
 
+import uuid
+
 
 #Este customTokenObtainPairSerializer sirve para el login
 class CustomTokenObtainPairSerializer(serializers.Serializer):
@@ -40,35 +42,36 @@ class CustomTokenObtainPairSerializer(serializers.Serializer):
                     'rol': user.encargado.rol
                 }
 
+            # Generar tokens con la estructura correcta para SimpleJWT
+            access_payload = {
+                'token_type': 'access',
+                'user_id': user.id,
+                'email': user.email,
+                'rol': user.rol,
+                'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1),
+                'iat': datetime.datetime.utcnow(),
+                'jti': str(uuid.uuid4())  # Añadir un ID único al token
+            }
+
+            refresh_payload = {
+                'token_type': 'refresh',
+                'user_id': user.id,
+                'exp': datetime.datetime.utcnow() + datetime.timedelta(days=7),
+                'iat': datetime.datetime.utcnow(),
+                'jti': str(uuid.uuid4())  # Añadir un ID único al token
+            }
+
+            access_token = jwt.encode(access_payload, settings.SECRET_KEY, algorithm='HS256')
+            refresh_token = jwt.encode(refresh_payload, settings.SECRET_KEY, algorithm='HS256')
+
             return {
-                'access': self._get_access_token(user),
-                'refresh': self._get_refresh_token(user),
+                'access': access_token,
+                'refresh': refresh_token,
                 'user': user_data
             }
 
         except Usuario.DoesNotExist:
             raise serializers.ValidationError({'error': 'Credenciales inválidas'})
-
-    
-    def _get_access_token(self, user):
-        token = jwt.encode({
-            'user_id': user.id,
-            'email': user.email,
-            'rol': user.rol,
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1),
-            'iat': datetime.datetime.utcnow(),
-            'type': 'access'
-    }, settings.SECRET_KEY, algorithm='HS256')
-        return token
-
-    def _get_refresh_token(self, user):
-        token = jwt.encode({
-            'user_id': user.id,
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(days=7),
-            'iat': datetime.datetime.utcnow(),
-            'type': 'refresh'
-        }, settings.SECRET_KEY, algorithm='HS256')
-        return token
 
 
 class UsuarioSerializer(serializers.ModelSerializer):
