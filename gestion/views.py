@@ -135,7 +135,8 @@ class UserMeView(APIView):
 
 # Vistas para CRUD
 class UsuarioViewSet(ModelViewSet):
-    permission_classes = [IsAuthenticated, IsAdminUser]  # Permiso Solo administradores
+    permission_classes = []  # Sin restricciones
+    #permission_classes = [IsAuthenticated, IsAdminUser]  # Permiso Solo administradores
     queryset = Usuario.objects.all()
     serializer_class = UsuarioSerializer
 
