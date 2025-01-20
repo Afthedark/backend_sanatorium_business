@@ -49,19 +49,24 @@ class CustomTokenObtainPairSerializer(serializers.Serializer):
         except Usuario.DoesNotExist:
             raise serializers.ValidationError({'error': 'Credenciales inválidas'})
 
+    
     def _get_access_token(self, user):
         token = jwt.encode({
             'user_id': user.id,
             'email': user.email,
             'rol': user.rol,
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1)
-        }, settings.SECRET_KEY, algorithm='HS256')
+            'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1),
+            'iat': datetime.datetime.utcnow(),
+            'type': 'access'
+    }, settings.SECRET_KEY, algorithm='HS256')
         return token
 
     def _get_refresh_token(self, user):
         token = jwt.encode({
             'user_id': user.id,
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(days=7)
+            'exp': datetime.datetime.utcnow() + datetime.timedelta(days=7),
+            'iat': datetime.datetime.utcnow(),
+            'type': 'refresh'
         }, settings.SECRET_KEY, algorithm='HS256')
         return token
 
