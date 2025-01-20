@@ -18,7 +18,7 @@ ALLOWED_HOSTS = config("ALLOWED_HOSTS").split(",")
 # REST Framework y JWT Configuration
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'gestion.middleware.auth.CustomJWTAuthentication',  # Actualizada la ruta
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
@@ -32,7 +32,6 @@ SIMPLE_JWT = {
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': False,
-    'UPDATE_LAST_LOGIN': False,
     'ALGORITHM': 'HS256',
     'SIGNING_KEY': config("SECRET_KEY"),
     'VERIFYING_KEY': None,
@@ -70,6 +69,7 @@ INSTALLED_APPS = [
     'corsheaders',
 ]
 
+# Y asegúrate de que el middleware JWT ya no esté en la lista
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
@@ -80,7 +80,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'gestion.middleware.auth.JWTAuthenticationMiddleware',
+    # Ya no necesitamos este middleware
+    # 'gestion.middleware.auth.JWTAuthenticationMiddleware',
 ]
 
 ROOT_URLCONF = 'proyecto_sanatorium.urls'
