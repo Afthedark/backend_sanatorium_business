@@ -1,4 +1,5 @@
 # gestion/views.py
+import datetime
 from .permissions import (
     IsAdminUser, 
     IsManagerUser, 
@@ -47,11 +48,11 @@ import jwt
 from django.conf import settings
 # JWT
 
-
 # JWT Views Login
 class LoginView(APIView):
-    permission_classes = []  # Sin validación de token
-    authentication_classes = []  # Sin autenticación
+    permission_classes = []
+    authentication_classes = []
+
     def post(self, request):
         serializer = CustomTokenObtainPairSerializer(data=request.data)
         if serializer.is_valid():
@@ -60,7 +61,9 @@ class LoginView(APIView):
 
 # JWT Views Refrescar token
 class RefreshTokenView(APIView):
-    permission_classes = []  # Sin restricciones
+    permission_classes = []
+    authentication_classes = []
+
     def post(self, request):
         refresh_token = request.data.get('refresh')
         if not refresh_token:
@@ -68,16 +71,33 @@ class RefreshTokenView(APIView):
 
         try:
             # Verificar el refresh token
-            payload = jwt.decode(refresh_token, settings.SECRET_KEY, algorithms=['HS256'])
+            payload = jwt.decode(
+                refresh_token, 
+                settings.SIMPLE_JWT['SIGNING_KEY'],
+                algorithms=[settings.SIMPLE_JWT['ALGORITHM']]
+            )
+            
+            if payload['token_type'] != 'refresh':
+                raise jwt.InvalidTokenError('Invalid token type')
+
             user = Usuario.objects.get(id=payload['user_id'])
 
             # Generar nuevo access token
-            access_token = jwt.encode({
+            access_payload = {
+                'token_type': 'access',
                 'user_id': user.id,
                 'email': user.email,
                 'rol': user.rol,
-                'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1)
-            }, settings.SECRET_KEY, algorithm='HS256')
+                'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1),
+                'iat': datetime.datetime.utcnow(),
+                'jti': str(uuid.uuid4())
+            }
+
+            access_token = jwt.encode(
+                access_payload, 
+                settings.SIMPLE_JWT['SIGNING_KEY'],
+                algorithm=settings.SIMPLE_JWT['ALGORITHM']
+            )
 
             return Response({'access': access_token})
 
@@ -127,7 +147,7 @@ class UserMeView(APIView):
 
 # Vistas para CRUD
 class UsuarioViewSet(ModelViewSet):
-    permission_classes = []  # Sin restricciones
+    permission_classes = [IsAuthenticated, IsAdminUser]  # Solo administradores
     #permission_classes = [IsAuthenticated, IsAdminUser]  # Permiso Solo administradores
     queryset = Usuario.objects.all()
     serializer_class = UsuarioSerializer

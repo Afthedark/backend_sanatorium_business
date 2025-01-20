@@ -16,6 +16,11 @@ class CustomTokenObtainPairSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
 
+    default_error_messages = {
+        'no_active_account': 'No existe una cuenta activa con estas credenciales',
+        'invalid_credentials': 'Credenciales inválidas'
+    }
+
     def validate(self, attrs):
         email = attrs.get('email').lower()
         password = attrs.get('password')
@@ -23,7 +28,9 @@ class CustomTokenObtainPairSerializer(serializers.Serializer):
         try:
             user = Usuario.objects.get(email=email)
             if user.password != password:
-                raise serializers.ValidationError({'error': 'Credenciales inválidas'})
+                raise serializers.ValidationError({
+                    'error': self.error_messages['invalid_credentials']
+                })
 
             user_data = {
                 'id': user.id,
@@ -50,7 +57,7 @@ class CustomTokenObtainPairSerializer(serializers.Serializer):
                 'rol': user.rol,
                 'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1),
                 'iat': datetime.datetime.utcnow(),
-                'jti': str(uuid.uuid4())  # Añadir un ID único al token
+                'jti': str(uuid.uuid4())
             }
 
             refresh_payload = {
@@ -58,11 +65,21 @@ class CustomTokenObtainPairSerializer(serializers.Serializer):
                 'user_id': user.id,
                 'exp': datetime.datetime.utcnow() + datetime.timedelta(days=7),
                 'iat': datetime.datetime.utcnow(),
-                'jti': str(uuid.uuid4())  # Añadir un ID único al token
+                'jti': str(uuid.uuid4())
             }
 
-            access_token = jwt.encode(access_payload, settings.SECRET_KEY, algorithm='HS256')
-            refresh_token = jwt.encode(refresh_payload, settings.SECRET_KEY, algorithm='HS256')
+            # Usar la configuración de SIMPLE_JWT
+            access_token = jwt.encode(
+                access_payload, 
+                settings.SIMPLE_JWT['SIGNING_KEY'],
+                algorithm=settings.SIMPLE_JWT['ALGORITHM']
+            )
+            
+            refresh_token = jwt.encode(
+                refresh_payload, 
+                settings.SIMPLE_JWT['SIGNING_KEY'],
+                algorithm=settings.SIMPLE_JWT['ALGORITHM']
+            )
 
             return {
                 'access': access_token,
@@ -71,7 +88,9 @@ class CustomTokenObtainPairSerializer(serializers.Serializer):
             }
 
         except Usuario.DoesNotExist:
-            raise serializers.ValidationError({'error': 'Credenciales inválidas'})
+            raise serializers.ValidationError({
+                'error': self.error_messages['no_active_account']
+            })
 
 
 class UsuarioSerializer(serializers.ModelSerializer):
