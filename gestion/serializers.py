@@ -12,7 +12,7 @@ from django.conf import settings
 #Este customTokenObtainPairSerializer sirve para el login
 class CustomTokenObtainPairSerializer(serializers.Serializer):
     email = serializers.EmailField()
-    password = serializers.CharField(write_only=True)  # Asegura que password nunca se devuelve
+    password = serializers.CharField(write_only=True)
 
     def validate(self, attrs):
         email = attrs.get('email').lower()
@@ -23,7 +23,6 @@ class CustomTokenObtainPairSerializer(serializers.Serializer):
             if user.password != password:
                 raise serializers.ValidationError({'error': 'Credenciales inválidas'})
 
-            # Eliminar password de la respuesta
             user_data = {
                 'id': user.id,
                 'nombre': user.nombre,
@@ -49,6 +48,22 @@ class CustomTokenObtainPairSerializer(serializers.Serializer):
 
         except Usuario.DoesNotExist:
             raise serializers.ValidationError({'error': 'Credenciales inválidas'})
+
+    def _get_access_token(self, user):
+        token = jwt.encode({
+            'user_id': user.id,
+            'email': user.email,
+            'rol': user.rol,
+            'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1)
+        }, settings.SECRET_KEY, algorithm='HS256')
+        return token
+
+    def _get_refresh_token(self, user):
+        token = jwt.encode({
+            'user_id': user.id,
+            'exp': datetime.datetime.utcnow() + datetime.timedelta(days=7)
+        }, settings.SECRET_KEY, algorithm='HS256')
+        return token
 
 
 class UsuarioSerializer(serializers.ModelSerializer):
