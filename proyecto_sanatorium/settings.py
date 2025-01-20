@@ -18,13 +18,12 @@ ALLOWED_HOSTS = config("ALLOWED_HOSTS").split(",")
 # REST Framework y JWT Configuration
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication',  # Cambiar a esta clase
+        'gestion.authentication.CustomJWTAuthentication',  # Usa nuestra clase personalizada
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
-    'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler'
 }
 
 # JWT Configuration
@@ -34,22 +33,17 @@ SIMPLE_JWT = {
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': False,
     'UPDATE_LAST_LOGIN': False,
-
     'ALGORITHM': 'HS256',
     'SIGNING_KEY': config("SECRET_KEY"),
     'VERIFYING_KEY': None,
-
     'AUTH_HEADER_TYPES': ('Bearer',),
     'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
     'USER_ID_FIELD': 'id',
     'USER_ID_CLAIM': 'user_id',
-    'USER_AUTHENTICATION_RULE': 'rest_framework_simplejwt.authentication.default_user_authentication_rule',
-
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
     'TOKEN_TYPE_CLAIM': 'token_type',
-    'TOKEN_USER_CLASS': 'gestion.models.Usuario',
-
     'JTI_CLAIM': 'jti',
+    'USER_AUTHENTICATION_RULE': 'rest_framework_simplejwt.authentication.default_user_authentication_rule',
 }
 
 # Swagger Configuration
