@@ -10,9 +10,14 @@ class JWTAuthenticationMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
+        # No validar token para la ruta de login
+        if request.path == '/api/login/':
+            return self.get_response(request)
+
         try:
-            auth_header = request.headers.get('Authorization')
-            if auth_header and auth_header.startswith('Bearer '):
+            auth_header = request.headers.get('Authorization', '')
+            if auth_header.startswith('Bearer '):
+                # Cortar el string después del espacio
                 token = auth_header.split(' ')[1]
                 payload = jwt.decode(token, settings.SECRET_KEY, algorithms=['HS256'])
                 request.user = Usuario.objects.get(id=payload['user_id'])

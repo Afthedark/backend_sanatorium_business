@@ -50,7 +50,8 @@ from django.conf import settings
 
 # JWT Views Login
 class LoginView(APIView):
-    permission_classes = []  # Sin restricciones
+    permission_classes = []  # Sin validación de token
+    authentication_classes = []  # Sin autenticación
     def post(self, request):
         serializer = CustomTokenObtainPairSerializer(data=request.data)
         if serializer.is_valid():

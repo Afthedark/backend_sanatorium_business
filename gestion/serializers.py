@@ -12,67 +12,43 @@ from django.conf import settings
 #Este customTokenObtainPairSerializer sirve para el login
 class CustomTokenObtainPairSerializer(serializers.Serializer):
     email = serializers.EmailField()
-    password = serializers.CharField()
+    password = serializers.CharField(write_only=True)  # Asegura que password nunca se devuelve
 
     def validate(self, attrs):
         email = attrs.get('email').lower()
         password = attrs.get('password')
 
         try:
-            # Buscar el usuario por email
             user = Usuario.objects.get(email=email)
-            
-            # Verificar la contraseña directamente sin hash
             if user.password != password:
                 raise serializers.ValidationError({'error': 'Credenciales inválidas'})
 
-            # Generar tokens
-            tokens = {
-                'access': self._get_access_token(user),
-                'refresh': self._get_refresh_token(user),
+            # Eliminar password de la respuesta
+            user_data = {
+                'id': user.id,
+                'nombre': user.nombre,
+                'email': user.email,
+                'rol': user.rol,
+                'created_at': user.created_at,
+                'updated_at': user.updated_at
             }
 
-            # Añadir datos del usuario
-            tokens.update({
-                'user': {
-                    'id': user.id,
-                    'nombre': user.nombre,
-                    'email': user.email,
-                    'rol': user.rol,
-                    'created_at': user.created_at,
-                    'updated_at': user.updated_at
-                }
-            })
-
-            # Añadir información del encargado si es empleado
             if user.rol == 'empleado' and user.encargado:
-                tokens['user']['encargado'] = {
+                user_data['encargado'] = {
                     'id': user.encargado.id,
                     'nombre': user.encargado.nombre,
                     'email': user.encargado.email,
                     'rol': user.encargado.rol
                 }
 
-            return tokens
+            return {
+                'access': self._get_access_token(user),
+                'refresh': self._get_refresh_token(user),
+                'user': user_data
+            }
 
         except Usuario.DoesNotExist:
             raise serializers.ValidationError({'error': 'Credenciales inválidas'})
-
-    def _get_access_token(self, user):
-        token = jwt.encode({
-            'user_id': user.id,
-            'email': user.email,
-            'rol': user.rol,
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1)
-        }, settings.SECRET_KEY, algorithm='HS256')
-        return token
-
-    def _get_refresh_token(self, user):
-        token = jwt.encode({
-            'user_id': user.id,
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(days=7)
-        }, settings.SECRET_KEY, algorithm='HS256')
-        return token
 
 
 class UsuarioSerializer(serializers.ModelSerializer):
