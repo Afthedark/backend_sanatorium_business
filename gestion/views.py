@@ -87,26 +87,15 @@ class RefreshTokenView(APIView):
             return Response({'error': 'Invalid refresh token'}, status=status.HTTP_401_UNAUTHORIZED)
 
 
+
 class UserMeView(APIView):
-    permission_classes = [IsAuthenticated]  # Cualquier usuario autenticado
-    
+    permission_classes = [IsAuthenticated]
+
     def get(self, request):
         try:
-            # Obtener el token del header
-            auth_header = request.headers.get('Authorization')
-            if not auth_header or not auth_header.startswith('Bearer '):
-                return Response({'error': 'Token no proporcionado'}, status=status.HTTP_401_UNAUTHORIZED)
+            user = request.user
             
-            token = auth_header.split(' ')[1]
-            
-            # Decodificar el token
-            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=['HS256'])
-            user_id = payload['user_id']
-            
-            # Obtener usuario
-            user = Usuario.objects.get(id=user_id)
-            
-            # Preparar respuesta (solo datos del usuario)
+            # Preparar respuesta
             response_data = {
                 'id': user.id,
                 'nombre': user.nombre,
@@ -116,7 +105,7 @@ class UserMeView(APIView):
                 'updated_at': user.updated_at
             }
             
-            # Añadir información del encargado solo si es empleado
+            # Añadir información del encargado si es empleado
             if user.rol == 'empleado' and user.encargado:
                 response_data['encargado'] = {
                     'id': user.encargado.id,
@@ -127,10 +116,11 @@ class UserMeView(APIView):
             
             return Response(response_data)
             
-        except jwt.ExpiredSignatureError:
-            return Response({'error': 'Token expirado'}, status=status.HTTP_401_UNAUTHORIZED)
-        except (jwt.InvalidTokenError, Usuario.DoesNotExist):
-            return Response({'error': 'Token inválido'}, status=status.HTTP_401_UNAUTHORIZED)
+        except Exception as e:
+            return Response(
+                {'error': 'Error al obtener datos del usuario'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 

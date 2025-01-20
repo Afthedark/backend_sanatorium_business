@@ -10,21 +10,27 @@ class JWTAuthenticationMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        # No validar token para la ruta de login
-        if request.path == '/api/login/':
+        # Rutas que no necesitan validación
+        public_paths = ['/api/login/', '/api/token/refresh/']
+        if request.path in public_paths:
             return self.get_response(request)
 
         try:
             auth_header = request.headers.get('Authorization', '')
-            if auth_header.startswith('Bearer '):
-                # Cortar el string después del espacio
-                token = auth_header.split(' ')[1]
-                payload = jwt.decode(token, settings.SECRET_KEY, algorithms=['HS256'])
-                request.user = Usuario.objects.get(id=payload['user_id'])
-            else:
+            
+            # Validar formato Bearer
+            if not auth_header or not auth_header.startswith('Bearer '):
                 request.user = None
+                return self.get_response(request)
+
+            # Extraer y validar token
+            token = auth_header.split(' ')[1]
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=['HS256'])
+            
+            # Asignar usuario
+            request.user = Usuario.objects.get(id=payload['user_id'])
+
         except (jwt.ExpiredSignatureError, jwt.InvalidTokenError, Usuario.DoesNotExist):
             request.user = None
 
-        response = self.get_response(request)
-        return response
+        return self.get_response(request)
