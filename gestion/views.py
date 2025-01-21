@@ -72,12 +72,12 @@ logger = logging.getLogger(__name__)
 
 # Vistas para CRUD
 class UsuarioViewSet(ModelViewSet):
-    #permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     queryset = Usuario.objects.all()
     serializer_class = UsuarioSerializer
 
 class ProyectoViewSet(ModelViewSet):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     queryset = Proyecto.objects.all()
     serializer_class = ProyectoSerializer
 
@@ -88,7 +88,7 @@ class PermisoViewSet(ModelViewSet):
 
 
 class TareaViewSet(ModelViewSet):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     queryset = Tarea.objects.all()
     serializer_class = TareaSerializer
 
