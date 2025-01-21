@@ -212,10 +212,10 @@ CORS_ALLOW_HEADERS = [
     'x-requested-with',
 ]
 
-# Añade estas configuraciones adicionales
+# Configuraciones adicionales
 CORS_EXPOSE_HEADERS = ['Content-Type', 'X-CSRFToken']
 CORS_PREFLIGHT_MAX_AGE = 86400  # 24 horas
-CORS_REPLACE_HTTPS_REFERER = True
+#Delete obselete CORS_REPLACE_HTTPS_REFERER = True
 
 # Deshabilita la protección CSRF para las APIs si es necesario
 CSRF_TRUSTED_ORIGINS = ['https://backend-sanatorium-business.onrender.com']
