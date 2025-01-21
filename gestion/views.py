@@ -37,12 +37,19 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 # Añade las nuevas vistas de autenticación
 class LoginView(APIView):
     permission_classes = [AllowAny]
+    serializer_class = CustomTokenObtainPairSerializer
 
-    def post(self, request):
-        serializer = CustomTokenObtainPairSerializer(data=request.data)
-        if serializer.is_valid():
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        
+        try:
+            serializer.is_valid(raise_exception=True)
             return Response(serializer.validated_data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except serializer.ValidationError as e:
+            return Response(
+                {'error': e.detail},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 class MeView(APIView):
     def get(self, request):

@@ -13,44 +13,55 @@ class CustomTokenObtainPairSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
 
+    default_error_messages = {
+        'no_active_account': 'No existe un usuario con este email.',
+        'invalid_password': 'Contraseña incorrecta.'
+    }
+
     def validate(self, attrs):
         email = attrs.get('email')
         password = attrs.get('password')
 
         try:
+            # Buscar el usuario
             user = Usuario.objects.get(email=email)
-            if check_password(password, user.password):
-                refresh = RefreshToken.for_user(user)
-                data = {
-                    'access': str(refresh.access_token),
-                    'refresh': str(refresh),
-                    'user': {
-                        'id': user.id,
-                        'nombre': user.nombre,
-                        'email': user.email,
-                        'rol': user.rol,
-                        'created_at': user.created_at,
-                        'updated_at': user.updated_at,
-                    }
+            
+            # Verificar la contraseña
+            if not check_password(password, user.password):
+                raise serializers.ValidationError(
+                    self.error_messages['invalid_password']
+                )
+
+            # Generar tokens
+            refresh = RefreshToken.for_user(user)
+
+            data = {
+                'access': str(refresh.access_token),
+                'refresh': str(refresh),
+                'user': {
+                    'id': user.id,
+                    'nombre': user.nombre,
+                    'email': user.email,
+                    'rol': user.rol,
+                    'created_at': user.created_at,
+                    'updated_at': user.updated_at,
+                }
+            }
+
+            if user.rol == 'empleado' and user.encargado:
+                data['user']['encargado'] = {
+                    'id': user.encargado.id,
+                    'nombre': user.encargado.nombre,
+                    'email': user.encargado.email,
+                    'rol': user.encargado.rol
                 }
 
-                if user.rol == 'empleado' and user.encargado:
-                    data['user']['encargado'] = {
-                        'id': user.encargado.id,
-                        'nombre': user.encargado.nombre,
-                        'email': user.encargado.email,
-                        'rol': user.encargado.rol
-                    }
+            return data
 
-                return data
-            else:
-                raise serializers.ValidationError({
-                    'error': ['Contraseña incorrecta.']
-                })
         except Usuario.DoesNotExist:
-            raise serializers.ValidationError({
-                'error': ['No existe un usuario con este email.']
-            })
+            raise serializers.ValidationError(
+                self.error_messages['no_active_account']
+            )
 
 
 class UsuarioSerializer(serializers.ModelSerializer):
