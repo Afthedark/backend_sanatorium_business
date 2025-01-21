@@ -48,50 +48,22 @@ class Usuario(models.Model):
         return True
 
     def check_password(self, raw_password):
-        """
-        Verifica si la contraseña en texto plano coincide con la hasheada
-        """
         return check_password(raw_password, self.password)
 
     def set_password(self, raw_password):
-        """
-        Establece la contraseña del usuario, hasheándola automáticamente
-        """
         self.password = make_password(raw_password)
 
     def save(self, *args, **kwargs):
-        """
-        Sobreescribe el método save para hashear la contraseña si es necesario
-        """
         if self._state.adding or not self.password.startswith('pbkdf2_sha256$'):
             self.set_password(self.password)
         super().save(*args, **kwargs)
 
-    # Métodos requeridos para la compatibilidad con JWT
+    @classmethod
+    def get_by_natural_key(self, email):
+        return self.objects.get(email=email)
+
     def get_username(self):
-        """
-        Retorna el campo que se usa como username (email en este caso)
-        """
         return self.email
-
-    @property
-    def is_staff(self):
-        """
-        Determina si el usuario es staff basado en su rol
-        """
-        return self.rol in ['administrador', 'encargado']
-
-    def has_perm(self, perm, obj=None):
-        """
-        Simplificado para nuestro caso, podrías implementar permisos más detallados
-        """
-        return True
-
-    def has_module_perms(self, app_label):
-        """
-        Simplificado para nuestro caso, podrías implementar permisos más detallados
-        """
-        return True
 
 
 
