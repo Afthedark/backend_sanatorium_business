@@ -21,20 +21,60 @@ from .serializers import (
     TareasEmpleadoSerializer,
     TareasProyectoSerializer,
     TareasEmpleadosEncargadoSerializer,
+    CustomTokenObtainPairSerializer,
 )
 
 from django.db.models import Max
 import logging
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 
+#JWT
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+#JWT
+# Añade las nuevas vistas de autenticación
+class LoginView(TokenObtainPairView):
+    permission_classes = [AllowAny]
+    serializer_class = CustomTokenObtainPairSerializer
+
+class MeView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        user = request.user
+        data = {
+            'id': user.id,
+            'nombre': user.nombre,
+            'email': user.email,
+            'rol': user.rol,
+            'created_at': user.created_at,
+            'updated_at': user.updated_at,
+        }
+        
+        if user.rol == 'empleado' and user.encargado:
+            data['encargado'] = {
+                'id': user.encargado.id,
+                'nombre': user.encargado.nombre,
+                'email': user.encargado.email,
+                'rol': user.encargado.rol
+            }
+            
+        return Response(data)
+#JWT
+
+
 logger = logging.getLogger(__name__)
 
 # Vistas para CRUD
 class UsuarioViewSet(ModelViewSet):
+    permission_classes = [IsAuthenticated]
     queryset = Usuario.objects.all()
     serializer_class = UsuarioSerializer
 
 class ProyectoViewSet(ModelViewSet):
+    permission_classes = [IsAuthenticated]
     queryset = Proyecto.objects.all()
     serializer_class = ProyectoSerializer
 
@@ -45,6 +85,7 @@ class PermisoViewSet(ModelViewSet):
 
 
 class TareaViewSet(ModelViewSet):
+    permission_classes = [IsAuthenticated]
     queryset = Tarea.objects.all()
     serializer_class = TareaSerializer
 

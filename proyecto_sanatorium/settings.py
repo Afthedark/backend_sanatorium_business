@@ -49,9 +49,21 @@ APPEND_SLASH = True
 #Estos 2 son para swagger
 #1 Configura REST_FRAMEWORK
 REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
+from datetime import timedelta
+#Esto es para JWT los tiempos de expiración
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'UPDATE_LAST_LOGIN': True,
+}
 
 
 #2 Configuración de Spectacular
@@ -81,6 +93,7 @@ INSTALLED_APPS = [
     'django_extensions',
     'drf_spectacular', # para swagger
     'corsheaders', # para cors
+    'rest_framework_simplejwt', # para JWT
 
 ]
 

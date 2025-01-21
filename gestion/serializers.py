@@ -3,6 +3,33 @@ from .models import Usuario, Proyecto, Permiso, Tarea
 from django.db.models import Max
 from django.db import transaction
 
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer #para autenticación JWT
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        user = self.user
+
+        # Añadir datos del usuario
+        data['user'] = {
+            'id': user.id,
+            'nombre': user.nombre,
+            'email': user.email,
+            'rol': user.rol,
+            'created_at': user.created_at,
+            'updated_at': user.updated_at,
+        }
+
+        if user.rol == 'empleado' and user.encargado:
+            data['user']['encargado'] = {
+                'id': user.encargado.id,
+                'nombre': user.encargado.nombre,
+                'email': user.encargado.email,
+                'rol': user.encargado.rol
+            }
+
+        return data
+
 
 
 class UsuarioSerializer(serializers.ModelSerializer):
