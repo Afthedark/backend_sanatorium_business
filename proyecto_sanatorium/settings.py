@@ -219,3 +219,5 @@ CORS_PREFLIGHT_MAX_AGE = 86400  # 24 horas
 
 # Deshabilita la protección CSRF para las APIs si es necesario
 CSRF_TRUSTED_ORIGINS = ['https://backend-sanatorium-business.onrender.com']
+
+#rama develop
