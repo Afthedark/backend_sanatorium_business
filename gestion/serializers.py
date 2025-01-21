@@ -19,40 +19,38 @@ class CustomTokenObtainPairSerializer(serializers.Serializer):
 
         try:
             user = Usuario.objects.get(email=email)
+            if check_password(password, user.password):
+                refresh = RefreshToken.for_user(user)
+                data = {
+                    'access': str(refresh.access_token),
+                    'refresh': str(refresh),
+                    'user': {
+                        'id': user.id,
+                        'nombre': user.nombre,
+                        'email': user.email,
+                        'rol': user.rol,
+                        'created_at': user.created_at,
+                        'updated_at': user.updated_at,
+                    }
+                }
+
+                if user.rol == 'empleado' and user.encargado:
+                    data['user']['encargado'] = {
+                        'id': user.encargado.id,
+                        'nombre': user.encargado.nombre,
+                        'email': user.encargado.email,
+                        'rol': user.encargado.rol
+                    }
+
+                return data
+            else:
+                raise serializers.ValidationError({
+                    'error': ['Contraseña incorrecta.']
+                })
         except Usuario.DoesNotExist:
             raise serializers.ValidationError({
-                'error': 'No se encontró un usuario con este email.'
+                'error': ['No existe un usuario con este email.']
             })
-
-        if not check_password(password, user.password):
-            raise serializers.ValidationError({
-                'error': 'Contraseña incorrecta.'
-            })
-
-        refresh = RefreshToken.for_user(user)
-        data = {
-            'access': str(refresh.access_token),
-            'refresh': str(refresh),
-            'user': {
-                'id': user.id,
-                'nombre': user.nombre,
-                'email': user.email,
-                'rol': user.rol,
-                'created_at': user.created_at,
-                'updated_at': user.updated_at,
-            }
-        }
-
-        if user.rol == 'empleado' and user.encargado:
-            data['user']['encargado'] = {
-                'id': user.encargado.id,
-                'nombre': user.encargado.nombre,
-                'email': user.encargado.email,
-                'rol': user.encargado.rol
-            }
-
-        return data
-
 
 
 class UsuarioSerializer(serializers.ModelSerializer):
