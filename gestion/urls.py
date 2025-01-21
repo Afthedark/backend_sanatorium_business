@@ -14,14 +14,7 @@ from .views import (
     ListarTareasProyectoAPIView,
     ListarTareasEmpleadosEncargadoAPIView,
     ListarTareasUsuarioProyectoAPIView,
-    LoginView,
-    RefreshTokenView,
-    UserMeView,
 )
-
-from django.urls import path
-from rest_framework_simplejwt.views import TokenRefreshView
-
 
 router = DefaultRouter()
 router.register('usuarios', UsuarioViewSet)
@@ -54,10 +47,6 @@ custom_urls = [
     path('tareas-usuario-proyecto/<int:empleado_id>/<int:proyecto_id>/', 
      ListarTareasUsuarioProyectoAPIView.as_view(), 
      name='tareas-usuario-proyecto'),
-     # Agregar las URLs de autenticación
-    path('login/', LoginView.as_view(), name='login'),
-    path('token/refresh/', RefreshTokenView.as_view(), name='token_refresh'),
-    path('me/', UserMeView.as_view(), name='user-me'),  # Nuevo endpoint
 
 ]
 

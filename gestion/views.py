@@ -1,15 +1,3 @@
-# gestion/views.py
-import datetime
-from .permissions import (
-    IsAdminUser, 
-    IsManagerUser, 
-    IsEmployeeUser, 
-    IsManagerOrAdmin,
-
-)
-from rest_framework.permissions import IsAuthenticated
-
-
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -33,139 +21,30 @@ from .serializers import (
     TareasEmpleadoSerializer,
     TareasProyectoSerializer,
     TareasEmpleadosEncargadoSerializer,
-    CustomTokenObtainPairSerializer,
 )
 
 from django.db.models import Max
 import logging
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 
-logger = logging.getLogger(__name__) # Para el logging sirve para ver los errores
-
-# JWT
-from .serializers import CustomTokenObtainPairSerializer
-import jwt
-from django.conf import settings
-# JWT
-
-# JWT Views Login
-class LoginView(APIView):
-    permission_classes = []
-    authentication_classes = []
-
-    def post(self, request):
-        serializer = CustomTokenObtainPairSerializer(data=request.data)
-        if serializer.is_valid():
-            return Response(serializer.validated_data)
-        return Response(serializer.errors, status=status.HTTP_401_UNAUTHORIZED)
-
-# JWT Views Refrescar token
-class RefreshTokenView(APIView):
-    permission_classes = []
-    authentication_classes = []
-
-    def post(self, request):
-        refresh_token = request.data.get('refresh')
-        if not refresh_token:
-            return Response({'error': 'Refresh token is required'}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            # Verificar el refresh token
-            payload = jwt.decode(
-                refresh_token, 
-                settings.SIMPLE_JWT['SIGNING_KEY'],
-                algorithms=[settings.SIMPLE_JWT['ALGORITHM']]
-            )
-            
-            if payload['token_type'] != 'refresh':
-                raise jwt.InvalidTokenError('Invalid token type')
-
-            user = Usuario.objects.get(id=payload['user_id'])
-
-            # Generar nuevo access token
-            access_payload = {
-                'token_type': 'access',
-                'user_id': user.id,
-                'email': user.email,
-                'rol': user.rol,
-                'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1),
-                'iat': datetime.datetime.utcnow(),
-                'jti': str(uuid.uuid4())
-            }
-
-            access_token = jwt.encode(
-                access_payload, 
-                settings.SIMPLE_JWT['SIGNING_KEY'],
-                algorithm=settings.SIMPLE_JWT['ALGORITHM']
-            )
-
-            return Response({'access': access_token})
-
-        except jwt.ExpiredSignatureError:
-            return Response({'error': 'Refresh token has expired'}, status=status.HTTP_401_UNAUTHORIZED)
-        except (jwt.InvalidTokenError, Usuario.DoesNotExist):
-            return Response({'error': 'Invalid refresh token'}, status=status.HTTP_401_UNAUTHORIZED)
-
-
-
-class UserMeView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        try:
-            user = request.user
-            
-            # Preparar respuesta
-            response_data = {
-                'id': user.id,
-                'nombre': user.nombre,
-                'email': user.email,
-                'rol': user.rol,
-                'created_at': user.created_at,
-                'updated_at': user.updated_at
-            }
-            
-            # Añadir información del encargado si es empleado
-            if user.rol == 'empleado' and user.encargado:
-                response_data['encargado'] = {
-                    'id': user.encargado.id,
-                    'nombre': user.encargado.nombre,
-                    'email': user.encargado.email,
-                    'rol': user.encargado.rol
-                }
-            
-            return Response(response_data)
-            
-        except Exception as e:
-            return Response(
-                {'error': 'Error al obtener datos del usuario'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-
-
-
+logger = logging.getLogger(__name__)
 
 # Vistas para CRUD
 class UsuarioViewSet(ModelViewSet):
-    permission_classes = [IsAuthenticated, IsAdminUser]  # Solo administradores
-    #permission_classes = [IsAuthenticated, IsAdminUser]  # Permiso Solo administradores
     queryset = Usuario.objects.all()
     serializer_class = UsuarioSerializer
 
 class ProyectoViewSet(ModelViewSet):
-    permission_classes = [IsAuthenticated, IsManagerOrAdmin]  # Admins y encargados
     queryset = Proyecto.objects.all()
     serializer_class = ProyectoSerializer
 
 class PermisoViewSet(ModelViewSet):
-    permission_classes = [IsAuthenticated, IsAdminUser]  # Solo administradores
     queryset = Permiso.objects.all()
     serializer_class = PermisoSerializer
 
 
 
 class TareaViewSet(ModelViewSet):
-    permission_classes = [IsAuthenticated]  # Cualquier usuario autenticado
     queryset = Tarea.objects.all()
     serializer_class = TareaSerializer
 
@@ -207,7 +86,6 @@ class TareaViewSet(ModelViewSet):
 # API personalizada para actualizar tareas
 @extend_schema(tags=['Tareas'])
 class ActualizarTareaEmpleadoAPIView(APIView):
-    permission_classes = [IsAuthenticated]  # Cualquier usuario autenticado
     def post(self, request, *args, **kwargs):
         serializer = ActualizarTareaSerializer(data=request.data)
         
@@ -309,7 +187,6 @@ class ActualizarTareaEmpleadoAPIView(APIView):
 
 
 class RegistroEmpleadoAPIView(APIView):
-    permission_classes = [IsAuthenticated, IsManagerOrAdmin]  # Admins y encargados
     def post(self, request, *args, **kwargs):
         serializer = RegistroEmpleadoSerializer(data=request.data)
         
@@ -331,7 +208,6 @@ class RegistroEmpleadoAPIView(APIView):
 
 
 class ListarEmpleadosPorEncargadoAPIView(APIView):
-    permission_classes = [IsAuthenticated, IsManagerUser]  # Solo encargados
     def get(self, request, encargado_id):
         try:
             # Verificar que el encargado existe y es un encargado
@@ -369,7 +245,6 @@ class ListarEmpleadosPorEncargadoAPIView(APIView):
         
 
 class ListarProyectosPorEncargadoAPIView(APIView):
-    permission_classes = [IsAuthenticated, IsManagerUser]  # Solo encargados
     def get(self, request, encargado_id):
         try:
             # Verificar que el encargado existe y tiene el rol correcto
@@ -406,7 +281,6 @@ class ListarProyectosPorEncargadoAPIView(APIView):
 
 
 class ListarProyectosAsignadosEmpleadoAPIView(APIView):
-    permission_classes = [IsAuthenticated]  # Cualquier usuario autenticado
     def get(self, request, empleado_id):
         try:
             # Verificar que el empleado existe y tiene el rol correcto
@@ -444,7 +318,6 @@ class ListarProyectosAsignadosEmpleadoAPIView(APIView):
 
 
 class ListarTareasEmpleadoAPIView(APIView):
-    permission_classes = [IsAuthenticated]  # Cualquier usuario autenticado
     def get(self, request, empleado_id):
         try:
             empleado = Usuario.objects.get(id=empleado_id, rol='empleado')
@@ -477,7 +350,6 @@ class ListarTareasEmpleadoAPIView(APIView):
 
 
 class ListarTareasProyectoAPIView(APIView):
-   permission_classes = [IsAuthenticated]  # Cualquier usuario autenticado
    def get(self, request, proyecto_id):
         try:
             proyecto = Proyecto.objects.get(id=proyecto_id)
@@ -515,7 +387,6 @@ class ListarTareasProyectoAPIView(APIView):
 
 # views.py
 class ListarTareasEmpleadosEncargadoAPIView(APIView):
-    permission_classes = [IsAuthenticated, IsManagerUser]  # Solo encargados
     def get(self, request, encargado_id):
         try:
             # Verificar que el encargado existe
@@ -547,7 +418,6 @@ class ListarTareasEmpleadosEncargadoAPIView(APIView):
 
 
 class ListarTareasUsuarioProyectoAPIView(APIView):
-    permission_classes = [IsAuthenticated]  # Cualquier usuario autenticado
     def get(self, request, empleado_id, proyecto_id):
         try:
             # Verificar que tanto el empleado como el proyecto existen
