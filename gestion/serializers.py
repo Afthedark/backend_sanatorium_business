@@ -4,20 +4,43 @@ from django.db.models import Max
 from django.db import transaction
 
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer #para autenticación JWT
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth.hashers import check_password
 
-class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+
+
+class CustomTokenObtainPairSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True)
+
     def validate(self, attrs):
-        data = super().validate(attrs)
-        user = self.user
+        email = attrs.get('email')
+        password = attrs.get('password')
 
-        # Añadir datos del usuario
-        data['user'] = {
-            'id': user.id,
-            'nombre': user.nombre,
-            'email': user.email,
-            'rol': user.rol,
-            'created_at': user.created_at,
-            'updated_at': user.updated_at,
+        try:
+            user = Usuario.objects.get(email=email)
+        except Usuario.DoesNotExist:
+            raise serializers.ValidationError({
+                'error': 'No se encontró un usuario con este email.'
+            })
+
+        if not check_password(password, user.password):
+            raise serializers.ValidationError({
+                'error': 'Contraseña incorrecta.'
+            })
+
+        refresh = RefreshToken.for_user(user)
+        data = {
+            'access': str(refresh.access_token),
+            'refresh': str(refresh),
+            'user': {
+                'id': user.id,
+                'nombre': user.nombre,
+                'email': user.email,
+                'rol': user.rol,
+                'created_at': user.created_at,
+                'updated_at': user.updated_at,
+            }
         }
 
         if user.rol == 'empleado' and user.encargado:

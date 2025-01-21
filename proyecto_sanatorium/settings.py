@@ -10,12 +10,10 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
+from datetime import timedelta
 from pathlib import Path
-
 import dj_database_url
-
 from decouple import config
-
 import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -33,54 +31,10 @@ DEBUG = config("DEBUG", cast=bool)
 
 ALLOWED_HOSTS = config("ALLOWED_HOSTS").split(",")  
 
-"""
-
-REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',  # Permitir acceso a todos los usuarios
-    ]
-}
-"""
-
 #Esto es para que sea opcional los / al final de los endpoints
 APPEND_SLASH = True
 
-
-#Estos 2 son para swagger
-#1 Configura REST_FRAMEWORK
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ),
-    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
-}
-
-from datetime import timedelta
-#Esto es para JWT los tiempos de expiración
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
-    'ROTATE_REFRESH_TOKENS': True,
-    'BLACKLIST_AFTER_ROTATION': True,
-    'UPDATE_LAST_LOGIN': True,
-}
-
-
-#2 Configuración de Spectacular
-SPECTACULAR_SETTINGS = {
-    'TITLE': 'Sanatorium API',
-    'DESCRIPTION': 'API para gestión de proyectos y tareas',
-    'VERSION': '1.0.0',
-    'SERVE_INCLUDE_SCHEMA': False,
-    # Configuraciones adicionales para mejorar la documentación automática
-    'COMPONENT_SPLIT_REQUEST': True,
-    'SCHEMA_PATH_PREFIX': '/api/',
-    'SCHEMA_COERCE_PATH_PK_SUFFIX': True,
-}
-
-
 # Application definition
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -94,13 +48,45 @@ INSTALLED_APPS = [
     'drf_spectacular', # para swagger
     'corsheaders', # para cors
     'rest_framework_simplejwt', # para JWT
-
 ]
+
+# Rest Framework Configuration
+REST_FRAMEWORK = {
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+}
+
+# JWT Configuration
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'UPDATE_LAST_LOGIN': True,
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+}
+
+# Swagger Configuration
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Sanatorium API',
+    'DESCRIPTION': 'API para gestión de proyectos y tareas',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,
+    'SCHEMA_PATH_PREFIX': '/api/',
+    'SCHEMA_COERCE_PATH_PK_SUFFIX': True,
+}
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',  # Para Cors
     'django.middleware.security.SecurityMiddleware',
-    
     'whitenoise.middleware.WhiteNoiseMiddleware',  # WhiteNoise middleware
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -130,11 +116,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'proyecto_sanatorium.wsgi.application'
 
-
-# Database
-# https://docs.djangoproject.com/en/5.1/ref/settings/#databases
-
-#Data base sql lite
+# Database Configuration
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -142,13 +124,9 @@ DATABASES = {
     }
 }
 
-#Data base postgres
-# pip install psycopg2
 DATABASES["default"] = dj_database_url.parse(config("DATABASE_URL"))
 
 # Password validation
-# https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -164,46 +142,27 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
-# https://docs.djangoproject.com/en/5.1/topics/i18n/
-
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_TZ = True
 
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.1/howto/static-files/
-
+# Static files configuration
 STATIC_URL = 'static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles') # para white noise
-
-# Configuración específica de WhiteNoise
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
-# Directorios adicionales donde Django buscará archivos estáticos white noise
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
 
 # Default primary key field type
-# https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
-
-# -----------CORS Configuration-------------
 # CORS Configuration
-CORS_ORIGIN_ALLOW_ALL = True  # Esta es la versión más actual de CORS_ALLOW_ALL_ORIGINS
+CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_CREDENTIALS = True
 
-# Configuración adicional importante
 CORS_ALLOW_METHODS = [
     'DELETE',
     'GET',
@@ -225,12 +184,8 @@ CORS_ALLOW_HEADERS = [
     'x-requested-with',
 ]
 
-# Configuraciones adicionales
 CORS_EXPOSE_HEADERS = ['Content-Type', 'X-CSRFToken']
 CORS_PREFLIGHT_MAX_AGE = 86400  # 24 horas
-#Delete obselete CORS_REPLACE_HTTPS_REFERER = True
 
-# Deshabilita la protección CSRF para las APIs si es necesario
+# CSRF Configuration
 CSRF_TRUSTED_ORIGINS = ['https://backend-sanatorium-business.onrender.com']
-
-#rama develop

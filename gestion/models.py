@@ -1,8 +1,9 @@
 from django.db import models
 
-# Create your models here.
+from django.contrib.auth.hashers import make_password
 
-from django.db import models
+
+# Create your models here.
 
 class Usuario(models.Model):
     ROLES = [
@@ -30,6 +31,27 @@ class Usuario(models.Model):
 
     def __str__(self):
         return self.nombre
+    
+    @property
+    def is_anonymous(self):
+        return False
+
+    @property
+    def is_authenticated(self):
+        return True
+
+    def set_password(self, raw_password):
+        self.password = make_password(raw_password)
+        self._password = raw_password
+
+    def save(self, *args, **kwargs):
+        if self._state.adding and self.password and not self.password.startswith('pbkdf2_sha256$'):
+            self.set_password(self.password)
+        super().save(*args, **kwargs)
+
+
+
+
 
 class Proyecto(models.Model):
     ESTADOS = [
