@@ -15,20 +15,19 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
-    @classmethod
-    def get_token(cls, user):
-        token = super().get_token(user)
-        
-        # Add custom claims
-        token['email'] = user.email
-        token['rol'] = user.rol
-        
-        return token
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True)
+    username = None  # Añade esta línea
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['username'] = None  # Elimina el campo username
+        self.fields.pop('username', None)  # Asegura que username no esté
 
     def validate(self, attrs):
-        attrs['username'] = attrs.get('email')
+        attrs['username'] = attrs.get('email')  # Usa el email como username
         data = super().validate(attrs)
-        
+
         # Add user data to response
         user = self.user
         data['user'] = {
@@ -39,7 +38,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             'created_at': user.created_at,
             'updated_at': user.updated_at,
         }
-        
+
         if user.rol == 'empleado' and user.encargado:
             data['user']['encargado'] = {
                 'id': user.encargado.id,
@@ -47,8 +46,15 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 'email': user.encargado.email,
                 'rol': user.encargado.rol
             }
-            
+
         return data
+
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+        token['email'] = user.email
+        token['rol'] = user.rol
+        return token
 
 
 class UsuarioSerializer(serializers.ModelSerializer):
