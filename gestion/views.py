@@ -82,16 +82,19 @@ logger = logging.getLogger(__name__)
 # Vistas para CRUD
 class UsuarioViewSet(ModelViewSet):
     #permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     queryset = Usuario.objects.all()
     serializer_class = UsuarioSerializer
 
 class ProyectoViewSet(ModelViewSet):
     #permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     queryset = Proyecto.objects.all()
     serializer_class = ProyectoSerializer
 
 class PermisoViewSet(ModelViewSet):
     #permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     queryset = Permiso.objects.all()
     serializer_class = PermisoSerializer
 
@@ -99,6 +102,7 @@ class PermisoViewSet(ModelViewSet):
 
 class TareaViewSet(ModelViewSet):
     #permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     queryset = Tarea.objects.all()
     serializer_class = TareaSerializer
 
@@ -141,6 +145,7 @@ class TareaViewSet(ModelViewSet):
 @extend_schema(tags=['Tareas'])
 class ActualizarTareaEmpleadoAPIView(APIView):
     #permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     def post(self, request, *args, **kwargs):
         serializer = ActualizarTareaSerializer(data=request.data)
         
