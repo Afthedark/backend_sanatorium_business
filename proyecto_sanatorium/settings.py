@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'drf_spectacular', # para swagger
     'corsheaders', # para cors
     'rest_framework_simplejwt', # para JWT
+    'rest_framework_simplejwt.token_blacklist',
 ]
 
 # Rest Framework Configuration
