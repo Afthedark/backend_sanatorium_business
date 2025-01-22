@@ -30,8 +30,8 @@ logger = logging.getLogger(__name__)
 
 # Authentication Views
 class LoginView(TokenObtainPairView):
-    serializer_class = CustomTokenObtainPairSerializer
     permission_classes = [AllowAny]
+    serializer_class = CustomTokenObtainPairSerializer
 
 class RefreshTokenView(TokenRefreshView):
     permission_classes = [AllowAny]

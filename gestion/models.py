@@ -62,6 +62,11 @@ class Usuario(models.Model):
     def get_by_natural_key(self, email):
         return self.objects.get(email=email)
 
+    
+    @property
+    def username(self):
+        return self.email
+
     def get_username(self):
         return self.email
 

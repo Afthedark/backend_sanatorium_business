@@ -6,27 +6,31 @@ from django.db import transaction
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer #para autenticación JWT
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth.hashers import check_password
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
 
 from .token import CustomRefreshToken
 from rest_framework_simplejwt.tokens import RefreshToken
+
+
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
-
-        # Añadir claims personalizados
+        
+        # Add custom claims
         token['email'] = user.email
         token['rol'] = user.rol
-
+        
         return token
 
     def validate(self, attrs):
+        attrs['username'] = attrs.get('email')
         data = super().validate(attrs)
+        
+        # Add user data to response
         user = self.user
-
         data['user'] = {
             'id': user.id,
             'nombre': user.nombre,
@@ -35,7 +39,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             'created_at': user.created_at,
             'updated_at': user.updated_at,
         }
-
+        
         if user.rol == 'empleado' and user.encargado:
             data['user']['encargado'] = {
                 'id': user.encargado.id,
@@ -43,7 +47,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 'email': user.encargado.email,
                 'rol': user.encargado.rol
             }
-
+            
         return data
 
 
