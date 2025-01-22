@@ -1,45 +1,73 @@
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
-
-# Create your models here.
-
 from django.db import models
 
-class UsuarioManager(BaseUserManager):
-    def create_user(self, email, password=None, **extra_fields):
-        user = self.model(email=email, **extra_fields)
-        user.set_password(password)
-        user.save()
-        return user
-    
-    def create_superuser(self, email, password=None, **extra_fields):
-        extra_fields.setdefault('is_staff', True)
-        extra_fields.setdefault('is_superuser', True)
-        return self.create_user(email, password, **extra_fields)
+from django.contrib.auth.hashers import make_password
 
-class Usuario(AbstractBaseUser, PermissionsMixin):
+
+# Create your models here. aqui los modelos
+
+class Usuario(models.Model):
     ROLES = [
         ('administrador', 'Administrador'),
         ('encargado', 'Encargado'),
         ('empleado', 'Empleado'),
     ]
+
     nombre = models.CharField(max_length=100)
     email = models.EmailField(unique=True)
+    password = models.CharField(max_length=255)
     rol = models.CharField(max_length=20, choices=ROLES)
-    encargado = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='empleados', limit_choices_to={'rol': 'encargado'})
+
+    encargado = models.ForeignKey(
+        'self',  # Relación con el mismo modelo
+        on_delete=models.SET_NULL,  # Si se elimina el encargado, el campo queda null
+        null=True,  # Permitir valores nulos
+        blank=True,  # Permitir valores vacíos en formularios
+        related_name='empleados',  # Para acceder desde el encargado a sus empleados
+        limit_choices_to={'rol': 'encargado'}  # Solo permitir seleccionar encargados
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    is_active = models.BooleanField(default=True)
-    is_staff = models.BooleanField(default=False)
-    is_superuser = models.BooleanField(default=False)
 
-    objects = UsuarioManager()
-
+    # Campos requeridos para JWT
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['nombre']
+    is_active = True
+
+    class Meta:
+        ordering = ['-created_at']
 
     def __str__(self):
         return self.nombre
-    
+
+    @property
+    def is_anonymous(self):
+        return False
+
+    @property
+    def is_authenticated(self):
+        return True
+
+    def check_password(self, raw_password):
+        return check_password(raw_password, self.password)
+
+    def set_password(self, raw_password):
+        self.password = make_password(raw_password)
+
+    def save(self, *args, **kwargs):
+        if self._state.adding or not self.password.startswith('pbkdf2_sha256$'):
+            self.set_password(self.password)
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def get_by_natural_key(self, email):
+        return self.objects.get(email=email)
+
+    def get_username(self):
+        return self.email
+
+
+
+
 
 class Proyecto(models.Model):
     ESTADOS = [

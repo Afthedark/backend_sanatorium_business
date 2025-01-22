@@ -1,3 +1,6 @@
+from rest_framework_simplejwt.views import TokenRefreshView  # Añade esta importación
+
+
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
@@ -14,12 +17,11 @@ from .views import (
     ListarTareasProyectoAPIView,
     ListarTareasEmpleadosEncargadoAPIView,
     ListarTareasUsuarioProyectoAPIView,
-    CustomTokenObtainPairView,
+    LoginView,
+    LoginView,
+    MeView,
+
 )
-from rest_framework_simplejwt.views import TokenRefreshView
-
-
-
 
 router = DefaultRouter()
 router.register('usuarios', UsuarioViewSet)
@@ -53,9 +55,10 @@ custom_urls = [
      ListarTareasUsuarioProyectoAPIView.as_view(), 
      name='tareas-usuario-proyecto'),
 
-
-    path('auth/login/', CustomTokenObtainPairView.as_view()),
-    path('auth/refresh/', TokenRefreshView.as_view()),
+     # Autenticación
+    path('auth/login/', LoginView.as_view(), name='token_obtain_pair'),
+    path('auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('me/', MeView.as_view(), name='me'),
 
 ]
 
