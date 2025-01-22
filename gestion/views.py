@@ -22,6 +22,7 @@ from .serializers import (
     TareasProyectoSerializer,
     TareasEmpleadosEncargadoSerializer,
     CustomTokenObtainPairSerializer,
+    
 )
 
 from django.db.models import Max
@@ -40,7 +41,7 @@ from django.conf import settings
 # Añade las nuevas vistas de autenticación
 class LoginView(APIView):
     permission_classes = [AllowAny]
-    serializer_class = CustomTokenObtainPairSerializer
+
     def post(self, request, *args, **kwargs):
         try:
             serializer = CustomTokenObtainPairSerializer(data=request.data)
@@ -49,7 +50,7 @@ class LoginView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response(
-                {'error': str(e)}, 
+                {'error': str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 

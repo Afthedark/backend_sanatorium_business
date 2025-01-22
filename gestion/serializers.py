@@ -7,7 +7,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer #para
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth.hashers import check_password
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-
+from .token import CustomRefreshToken
 
 
 
@@ -21,12 +21,12 @@ class CustomTokenObtainPairSerializer(serializers.Serializer):
 
         try:
             user = Usuario.objects.get(email=email)
-            if not check_password(password, user.password):
+            if not user.check_password(password):
                 raise serializers.ValidationError({
                     'error': 'Contraseña incorrecta.'
                 })
 
-            refresh = RefreshToken.for_user(user)
+            refresh = CustomRefreshToken.for_user(user)
             data = {
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
@@ -53,10 +53,6 @@ class CustomTokenObtainPairSerializer(serializers.Serializer):
         except Usuario.DoesNotExist:
             raise serializers.ValidationError({
                 'error': 'No existe un usuario con este email.'
-            })
-        except Exception as e:
-            raise serializers.ValidationError({
-                'error': str(e)
             })
 
 
