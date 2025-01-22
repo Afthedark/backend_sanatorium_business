@@ -1,19 +1,29 @@
-# gestion/tokens.py
-from rest_framework_simplejwt.tokens import Token
-from rest_framework_simplejwt.models import TokenUser
+from rest_framework_simplejwt.tokens import RefreshToken
+from datetime import timedelta
 
-class CustomTokenUser(TokenUser):
+class CustomRefreshToken(RefreshToken):
+    @property
+    def access_token(self):
+        access = self._access_token
+        access.set_exp(lifetime=timedelta(hours=1))
+        return access
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.set_exp(lifetime=timedelta(days=7))
+
     @classmethod
     def for_user(cls, user):
-        token_user = cls()
-        token_user.id = user.id
-        token_user.email = user.email
-        token_user.rol = user.rol
-        return token_user
-
-class CustomToken(Token):
-    token_type = 'access'
-    user_class = CustomTokenUser
-
-class CustomRefreshToken(CustomToken):
-    token_type = 'refresh'
+        token = super().for_user(user)
+        
+        # Add custom claims
+        token['user_id'] = user.id
+        token['email'] = user.email
+        token['rol'] = user.rol
+        
+        # Add custom claims to access token
+        token.access_token['user_id'] = user.id
+        token.access_token['email'] = user.email
+        token.access_token['rol'] = user.rol
+        
+        return token

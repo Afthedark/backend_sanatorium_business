@@ -26,7 +26,9 @@ class CustomTokenObtainPairSerializer(serializers.Serializer):
                     'error': 'Contraseña incorrecta.'
                 })
 
+            # Create token
             refresh = CustomRefreshToken.for_user(user)
+
             data = {
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
@@ -53,6 +55,10 @@ class CustomTokenObtainPairSerializer(serializers.Serializer):
         except Usuario.DoesNotExist:
             raise serializers.ValidationError({
                 'error': 'No existe un usuario con este email.'
+            })
+        except Exception as e:
+            raise serializers.ValidationError({
+                'error': str(e)
             })
 
 
