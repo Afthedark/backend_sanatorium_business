@@ -30,6 +30,10 @@ class Usuario(models.Model):
 
     def __str__(self):
         return self.nombre
+    
+    @property
+    def username(self):
+        return self.email
 
 class Proyecto(models.Model):
     ESTADOS = [

@@ -7,7 +7,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     username_field = 'email'
-
+    
     def validate(self, attrs):
         credentials = {
             'email': attrs.get('email'),
@@ -16,23 +16,23 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         
         user = Usuario.objects.filter(email=credentials['email']).first()
         if not user:
-            raise serializers.ValidationError({'email': 'No existe un usuario con este email'})
+            raise serializers.ValidationError('No existe usuario con este email')
             
-        if user.password != credentials['password']:  # En producción usar hash
-            raise serializers.ValidationError({'password': 'Contraseña incorrecta'})
-
+        if user.password != credentials['password']:
+            raise serializers.ValidationError('Contraseña incorrecta')
+            
+        attrs['username'] = credentials['email']
         data = super().validate(attrs)
         
-        # Agregar información del usuario
         data['user'] = {
             'id': user.id,
             'nombre': user.nombre,
             'email': user.email,
             'rol': user.rol,
             'created_at': user.created_at,
-            'updated_at': user.updated_at,
+            'updated_at': user.updated_at
         }
-
+        
         if user.rol == 'empleado' and user.encargado:
             data['user']['encargado'] = {
                 'id': user.encargado.id,
@@ -40,7 +40,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 'email': user.encargado.email,
                 'rol': user.encargado.rol
             }
-
+            
         return data
 
 
