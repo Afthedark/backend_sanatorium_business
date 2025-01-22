@@ -73,6 +73,8 @@ SIMPLE_JWT = {
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
 }
 
+AUTH_USER_MODEL = 'gestion.Usuario'
+
 # Swagger Configuration
 SPECTACULAR_SETTINGS = {
     'TITLE': 'Sanatorium API',

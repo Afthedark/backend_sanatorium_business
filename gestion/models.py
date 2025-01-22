@@ -1,6 +1,7 @@
 from django.db import models
 
-from django.contrib.auth.hashers import make_password
+from django.contrib.auth.hashers import make_password, check_password
+
 
 
 # Create your models here. aqui los modelos
@@ -29,9 +30,14 @@ class Usuario(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    # Campos requeridos para JWT
+    # Para SimpleJWT y Django:
     USERNAME_FIELD = 'email'
-    is_active = True
+    REQUIRED_FIELDS = []  # <--- Agrega esto
+
+
+    # Si no requieres Django Admin, puedes dejar is_active como propiedad;
+    # si usas Django Admin, lo ideal sería convertirlo en un models.BooleanField.
+    is_active = True  
 
     class Meta:
         ordering = ['-created_at']
@@ -59,8 +65,8 @@ class Usuario(models.Model):
         super().save(*args, **kwargs)
 
     @classmethod
-    def get_by_natural_key(self, email):
-        return self.objects.get(email=email)
+    def get_by_natural_key(cls, email):
+        return cls.objects.get(email=email)
 
     def get_username(self):
         return self.email
