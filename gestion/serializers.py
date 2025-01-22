@@ -3,58 +3,6 @@ from .models import Usuario, Proyecto, Permiso, Tarea
 from django.db.models import Max
 from django.db import transaction
 
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer #para autenticación JWT
-from rest_framework_simplejwt.tokens import RefreshToken
-from django.contrib.auth.hashers import check_password
-
-
-from .token import CustomRefreshToken
-from rest_framework_simplejwt.tokens import RefreshToken
-
-
-
-
-class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
-    email = serializers.EmailField()
-    password = serializers.CharField(write_only=True)
-    username = None  # Añade esta línea
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['username'] = None  # Elimina el campo username
-        self.fields.pop('username', None)  # Asegura que username no esté
-
-    def validate(self, attrs):
-        attrs['username'] = attrs.get('email')  # Usa el email como username
-        data = super().validate(attrs)
-
-        # Add user data to response
-        user = self.user
-        data['user'] = {
-            'id': user.id,
-            'nombre': user.nombre,
-            'email': user.email,
-            'rol': user.rol,
-            'created_at': user.created_at,
-            'updated_at': user.updated_at,
-        }
-
-        if user.rol == 'empleado' and user.encargado:
-            data['user']['encargado'] = {
-                'id': user.encargado.id,
-                'nombre': user.encargado.nombre,
-                'email': user.encargado.email,
-                'rol': user.encargado.rol
-            }
-
-        return data
-
-    @classmethod
-    def get_token(cls, user):
-        token = super().get_token(user)
-        token['email'] = user.email
-        token['rol'] = user.rol
-        return token
 
 
 class UsuarioSerializer(serializers.ModelSerializer):

@@ -2,13 +2,11 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import AllowAny
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 from django.db import transaction
-from django.db.models import F, Max
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from drf_spectacular.utils import extend_schema, OpenApiParameter
-import logging
-
+from django.db.models import F
 from .models import Usuario, Proyecto, Permiso, Tarea
 from .serializers import (
     UsuarioSerializer, 
@@ -23,71 +21,30 @@ from .serializers import (
     TareasEmpleadoSerializer,
     TareasProyectoSerializer,
     TareasEmpleadosEncargadoSerializer,
-    CustomTokenObtainPairSerializer,
 )
+
+from django.db.models import Max
+import logging
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 
 logger = logging.getLogger(__name__)
 
-# Authentication Views
-class LoginView(TokenObtainPairView):
-    permission_classes = [AllowAny]
-    serializer_class = CustomTokenObtainPairSerializer
-
-class RefreshTokenView(TokenRefreshView):
-    permission_classes = [AllowAny]
-
-class MeView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        user = request.user
-        try:
-            data = {
-                'id': user.id,
-                'nombre': user.nombre,
-                'email': user.email,
-                'rol': user.rol,
-                'created_at': user.created_at,
-                'updated_at': user.updated_at,
-            }
-            
-            if user.rol == 'empleado' and user.encargado:
-                data['encargado'] = {
-                    'id': user.encargado.id,
-                    'nombre': user.encargado.nombre,
-                    'email': user.encargado.email,
-                    'rol': user.encargado.rol
-                }
-                
-            return Response(data)
-        except Exception as e:
-            return Response(
-                {'error': str(e)}, 
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-
-
-
 # Vistas para CRUD
 class UsuarioViewSet(ModelViewSet):
-    permission_classes = [IsAuthenticated]
     queryset = Usuario.objects.all()
     serializer_class = UsuarioSerializer
 
 class ProyectoViewSet(ModelViewSet):
-    permission_classes = [IsAuthenticated]
     queryset = Proyecto.objects.all()
     serializer_class = ProyectoSerializer
 
 class PermisoViewSet(ModelViewSet):
-    permission_classes = [IsAuthenticated]
     queryset = Permiso.objects.all()
     serializer_class = PermisoSerializer
 
 
 
 class TareaViewSet(ModelViewSet):
-    permission_classes = [IsAuthenticated]
     queryset = Tarea.objects.all()
     serializer_class = TareaSerializer
 
@@ -129,7 +86,6 @@ class TareaViewSet(ModelViewSet):
 # API personalizada para actualizar tareas
 @extend_schema(tags=['Tareas'])
 class ActualizarTareaEmpleadoAPIView(APIView):
-    permission_classes = [IsAuthenticated]
     def post(self, request, *args, **kwargs):
         serializer = ActualizarTareaSerializer(data=request.data)
         
@@ -231,7 +187,6 @@ class ActualizarTareaEmpleadoAPIView(APIView):
 
 
 class RegistroEmpleadoAPIView(APIView):
-    permission_classes = [IsAuthenticated]
     def post(self, request, *args, **kwargs):
         serializer = RegistroEmpleadoSerializer(data=request.data)
         
@@ -253,7 +208,6 @@ class RegistroEmpleadoAPIView(APIView):
 
 
 class ListarEmpleadosPorEncargadoAPIView(APIView):
-    permission_classes = [IsAuthenticated]
     def get(self, request, encargado_id):
         try:
             # Verificar que el encargado existe y es un encargado
@@ -291,7 +245,6 @@ class ListarEmpleadosPorEncargadoAPIView(APIView):
         
 
 class ListarProyectosPorEncargadoAPIView(APIView):
-    permission_classes = [IsAuthenticated]
     def get(self, request, encargado_id):
         try:
             # Verificar que el encargado existe y tiene el rol correcto
@@ -328,7 +281,6 @@ class ListarProyectosPorEncargadoAPIView(APIView):
 
 
 class ListarProyectosAsignadosEmpleadoAPIView(APIView):
-    permission_classes = [IsAuthenticated]
     def get(self, request, empleado_id):
         try:
             # Verificar que el empleado existe y tiene el rol correcto
@@ -366,7 +318,6 @@ class ListarProyectosAsignadosEmpleadoAPIView(APIView):
 
 
 class ListarTareasEmpleadoAPIView(APIView):
-    permission_classes = [IsAuthenticated]
     def get(self, request, empleado_id):
         try:
             empleado = Usuario.objects.get(id=empleado_id, rol='empleado')
@@ -399,7 +350,6 @@ class ListarTareasEmpleadoAPIView(APIView):
 
 
 class ListarTareasProyectoAPIView(APIView):
-   permission_classes = [IsAuthenticated]
    def get(self, request, proyecto_id):
         try:
             proyecto = Proyecto.objects.get(id=proyecto_id)
@@ -437,7 +387,6 @@ class ListarTareasProyectoAPIView(APIView):
 
 # views.py
 class ListarTareasEmpleadosEncargadoAPIView(APIView):
-    permission_classes = [IsAuthenticated]
     def get(self, request, encargado_id):
         try:
             # Verificar que el encargado existe
@@ -469,7 +418,6 @@ class ListarTareasEmpleadosEncargadoAPIView(APIView):
 
 
 class ListarTareasUsuarioProyectoAPIView(APIView):
-    permission_classes = [IsAuthenticated]
     def get(self, request, empleado_id, proyecto_id):
         try:
             # Verificar que tanto el empleado como el proyecto existen

@@ -1,9 +1,8 @@
 from django.db import models
 
-from django.contrib.auth.hashers import make_password, check_password
+# Create your models here.
 
-
-# Create your models here. aqui los modelos
+from django.db import models
 
 class Usuario(models.Model):
     ROLES = [
@@ -29,50 +28,8 @@ class Usuario(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    # Campos requeridos para JWT
-    USERNAME_FIELD = 'email'
-    is_active = True
-
-    class Meta:
-        ordering = ['-created_at']
-
     def __str__(self):
         return self.nombre
-
-    @property
-    def is_anonymous(self):
-        return False
-
-    @property
-    def is_authenticated(self):
-        return True
-
-    def check_password(self, raw_password):
-        return check_password(raw_password, self.password)
-
-    def set_password(self, raw_password):
-        self.password = make_password(raw_password)
-
-    def save(self, *args, **kwargs):
-        if self._state.adding or not self.password.startswith('pbkdf2_sha256$'):
-            self.set_password(self.password)
-        super().save(*args, **kwargs)
-
-    @classmethod
-    def get_by_natural_key(self, email):
-        return self.objects.get(email=email)
-
-    
-    @property
-    def username(self):
-        return self.email
-
-    def get_username(self):
-        return self.email
-
-
-
-
 
 class Proyecto(models.Model):
     ESTADOS = [
