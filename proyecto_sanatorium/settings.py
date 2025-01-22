@@ -116,6 +116,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'proyecto_sanatorium.wsgi.application'
 
+
 # Database Configuration
 DATABASES = {
     'default': {
@@ -124,7 +125,11 @@ DATABASES = {
     }
 }
 
+
 DATABASES["default"] = dj_database_url.parse(config("DATABASE_URL"))
+
+
+
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
