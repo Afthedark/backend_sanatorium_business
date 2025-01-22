@@ -81,28 +81,24 @@ logger = logging.getLogger(__name__)
 
 # Vistas para CRUD
 class UsuarioViewSet(ModelViewSet):
-    #permission_classes = [IsAuthenticated]
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     queryset = Usuario.objects.all()
     serializer_class = UsuarioSerializer
 
 class ProyectoViewSet(ModelViewSet):
-    #permission_classes = [IsAuthenticated]
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     queryset = Proyecto.objects.all()
     serializer_class = ProyectoSerializer
 
 class PermisoViewSet(ModelViewSet):
-    #permission_classes = [IsAuthenticated]
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     queryset = Permiso.objects.all()
     serializer_class = PermisoSerializer
 
 
 
 class TareaViewSet(ModelViewSet):
-    #permission_classes = [IsAuthenticated]
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     queryset = Tarea.objects.all()
     serializer_class = TareaSerializer
 
@@ -382,7 +378,7 @@ class ListarProyectosAsignadosEmpleadoAPIView(APIView):
 
 
 class ListarTareasEmpleadoAPIView(APIView):
-    #permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     def get(self, request, empleado_id):
         try:
             empleado = Usuario.objects.get(id=empleado_id, rol='empleado')
