@@ -8,6 +8,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth.hashers import check_password
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from .token import CustomRefreshToken
+from rest_framework_simplejwt.tokens import RefreshToken
 
 
 
@@ -26,12 +27,14 @@ class CustomTokenObtainPairSerializer(serializers.Serializer):
                     'error': 'Contraseña incorrecta.'
                 })
 
-            # Create token
-            refresh = CustomRefreshToken.for_user(user)
+            refresh = RefreshToken()
+            refresh['user_id'] = user.id
+            refresh['email'] = user.email
+            refresh['rol'] = user.rol
 
             data = {
-                'refresh': str(refresh),
                 'access': str(refresh.access_token),
+                'refresh': str(refresh),
                 'user': {
                     'id': user.id,
                     'nombre': user.nombre,
@@ -55,10 +58,6 @@ class CustomTokenObtainPairSerializer(serializers.Serializer):
         except Usuario.DoesNotExist:
             raise serializers.ValidationError({
                 'error': 'No existe un usuario con este email.'
-            })
-        except Exception as e:
-            raise serializers.ValidationError({
-                'error': str(e)
             })
 
 
