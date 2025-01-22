@@ -75,7 +75,7 @@ class ProyectoSimplificadoSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Proyecto
-        fields = ['id', 'nombre', 'descripcion', 'estado', 'encargado']
+        fields = ['id', 'nombre', 'descripcion', 'estado', 'fecha_inicio', 'fecha_fin', 'encargado']
     
     def get_encargado(self, obj):
         return {
