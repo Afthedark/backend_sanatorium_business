@@ -16,8 +16,8 @@ from .views import (
     ListarTareasUsuarioProyectoAPIView,
     CustomTokenObtainPairView,
 )
+from rest_framework_simplejwt.views import TokenRefreshView
 
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 
 
@@ -54,7 +54,7 @@ custom_urls = [
      name='tareas-usuario-proyecto'),
 
 
-    path('auth/login/', TokenObtainPairView.as_view()),
+    path('auth/login/', CustomTokenObtainPairView.as_view()),
     path('auth/refresh/', TokenRefreshView.as_view()),
 
 ]

@@ -29,16 +29,15 @@ import logging
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 
 # para jwt
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework_simplejwt.views import TokenObtainPairView # para jwt 
 from rest_framework.permissions import IsAuthenticated
 
 
+class CustomTokenObtainPairView(TokenObtainPairView):
+   serializer_class = CustomTokenObtainPairSerializer
 
 
 logger = logging.getLogger(__name__)
-
-class CustomTokenObtainPairView(TokenObtainPairView):
-    serializer_class = CustomTokenObtainPairSerializer
 
 # Vistas para CRUD
 class UsuarioViewSet(ModelViewSet):

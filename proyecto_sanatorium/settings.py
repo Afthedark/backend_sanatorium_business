@@ -56,10 +56,11 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.AllowAny',
     ],
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
+
 
 #2 Configuración de JWT
 SIMPLE_JWT = {
@@ -70,6 +71,7 @@ SIMPLE_JWT = {
     'USER_ID_FIELD': 'id',
     'USER_ID_CLAIM': 'user_id',
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
 AUTH_USER_MODEL = 'gestion.Usuario'
@@ -101,8 +103,9 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_extensions',
     'drf_spectacular', # para swagger
-    'corsheaders', # para cors
-
+    'corsheaders', # para cors,
+    'rest_framework_simplejwt', # JWT
+    'whitenoise.runserver_nostatic', # Whitenoise
 ]
 
 MIDDLEWARE = [

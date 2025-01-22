@@ -1,44 +1,45 @@
-from django.db import models
-from django.contrib.auth.models import AbstractUser
-
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 
 # Create your models here.
 
 from django.db import models
 
-class Usuario(AbstractUser):
+class UsuarioManager(BaseUserManager):
+    def create_user(self, email, password=None, **extra_fields):
+        user = self.model(email=email, **extra_fields)
+        user.set_password(password)
+        user.save()
+        return user
+    
+    def create_superuser(self, email, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        return self.create_user(email, password, **extra_fields)
+
+class Usuario(AbstractBaseUser, PermissionsMixin):
     ROLES = [
         ('administrador', 'Administrador'),
         ('encargado', 'Encargado'),
         ('empleado', 'Empleado'),
     ]
-
     nombre = models.CharField(max_length=100)
     email = models.EmailField(unique=True)
-    password = models.CharField(max_length=255)
     rol = models.CharField(max_length=20, choices=ROLES)
-
-    encargado = models.ForeignKey(
-        'self',  # Relación con el mismo modelo
-        on_delete=models.SET_NULL,  # Si se elimina el encargado, el campo queda null
-        null=True,  # Permitir valores nulos
-        blank=True,  # Permitir valores vacíos en formularios
-        related_name='empleados',  # Para acceder desde el encargado a sus empleados
-        limit_choices_to={'rol': 'encargado'}  # Solo permitir seleccionar encargados
-    )
-
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username', 'nombre']
-
+    encargado = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='empleados', limit_choices_to={'rol': 'encargado'})
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    is_active = models.BooleanField(default=True)
+    is_staff = models.BooleanField(default=False)
+    is_superuser = models.BooleanField(default=False)
+
+    objects = UsuarioManager()
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['nombre']
 
     def __str__(self):
         return self.nombre
     
-    @property
-    def username(self):
-        return self.email
 
 class Proyecto(models.Model):
     ESTADOS = [
