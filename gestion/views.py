@@ -2,11 +2,13 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import AllowAny
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.db import transaction
-from django.db.models import F
+from django.db.models import F, Max
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from drf_spectacular.utils import extend_schema, OpenApiParameter
+import logging
+
 from .models import Usuario, Proyecto, Permiso, Tarea
 from .serializers import (
     UsuarioSerializer, 
@@ -22,61 +24,49 @@ from .serializers import (
     TareasProyectoSerializer,
     TareasEmpleadosEncargadoSerializer,
     CustomTokenObtainPairSerializer,
-    
 )
 
-from django.db.models import Max
-import logging
-from drf_spectacular.utils import extend_schema, OpenApiParameter
+logger = logging.getLogger(__name__)
 
-#JWT
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from rest_framework_simplejwt.views import TokenObtainPairView
-
-
-from django.conf import settings
-
-#JWT
-# Añade las nuevas vistas de autenticación
-class LoginView(APIView):
-    permission_classes = [AllowAny]
+# Authentication Views
+class LoginView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
+    permission_classes = [AllowAny]
 
-    def post(self, request, *args, **kwargs):
-        serializer = self.serializer_class(data=request.data)
-        if serializer.is_valid():
-            return Response(serializer.validated_data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+class RefreshTokenView(TokenRefreshView):
+    permission_classes = [AllowAny]
 
 class MeView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         user = request.user
-        data = {
-            'id': user.id,
-            'nombre': user.nombre,
-            'email': user.email,
-            'rol': user.rol,
-            'created_at': user.created_at,
-            'updated_at': user.updated_at,
-        }
-        
-        if user.rol == 'empleado' and user.encargado:
-            data['encargado'] = {
-                'id': user.encargado.id,
-                'nombre': user.encargado.nombre,
-                'email': user.encargado.email,
-                'rol': user.encargado.rol
+        try:
+            data = {
+                'id': user.id,
+                'nombre': user.nombre,
+                'email': user.email,
+                'rol': user.rol,
+                'created_at': user.created_at,
+                'updated_at': user.updated_at,
             }
             
-        return Response(data)
-#JWT
+            if user.rol == 'empleado' and user.encargado:
+                data['encargado'] = {
+                    'id': user.encargado.id,
+                    'nombre': user.encargado.nombre,
+                    'email': user.encargado.email,
+                    'rol': user.encargado.rol
+                }
+                
+            return Response(data)
+        except Exception as e:
+            return Response(
+                {'error': str(e)}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
-logger = logging.getLogger(__name__)
 
 # Vistas para CRUD
 class UsuarioViewSet(ModelViewSet):

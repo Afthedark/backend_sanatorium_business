@@ -7,58 +7,44 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer #para
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth.hashers import check_password
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
 from .token import CustomRefreshToken
 from rest_framework_simplejwt.tokens import RefreshToken
 
 
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
 
-class CustomTokenObtainPairSerializer(serializers.Serializer):
-    email = serializers.EmailField()
-    password = serializers.CharField(write_only=True)
+        # Añadir claims personalizados
+        token['email'] = user.email
+        token['rol'] = user.rol
+
+        return token
 
     def validate(self, attrs):
-        email = attrs.get('email')
-        password = attrs.get('password')
+        data = super().validate(attrs)
+        user = self.user
 
-        try:
-            user = Usuario.objects.get(email=email)
-            if not user.check_password(password):
-                raise serializers.ValidationError({
-                    'error': 'Contraseña incorrecta.'
-                })
+        data['user'] = {
+            'id': user.id,
+            'nombre': user.nombre,
+            'email': user.email,
+            'rol': user.rol,
+            'created_at': user.created_at,
+            'updated_at': user.updated_at,
+        }
 
-            refresh = RefreshToken()
-            refresh['user_id'] = user.id
-            refresh['email'] = user.email
-            refresh['rol'] = user.rol
-
-            data = {
-                'access': str(refresh.access_token),
-                'refresh': str(refresh),
-                'user': {
-                    'id': user.id,
-                    'nombre': user.nombre,
-                    'email': user.email,
-                    'rol': user.rol,
-                    'created_at': user.created_at,
-                    'updated_at': user.updated_at,
-                }
+        if user.rol == 'empleado' and user.encargado:
+            data['user']['encargado'] = {
+                'id': user.encargado.id,
+                'nombre': user.encargado.nombre,
+                'email': user.encargado.email,
+                'rol': user.encargado.rol
             }
 
-            if user.rol == 'empleado' and user.encargado:
-                data['user']['encargado'] = {
-                    'id': user.encargado.id,
-                    'nombre': user.encargado.nombre,
-                    'email': user.encargado.email,
-                    'rol': user.encargado.rol
-                }
-
-            return data
-
-        except Usuario.DoesNotExist:
-            raise serializers.ValidationError({
-                'error': 'No existe un usuario con este email.'
-            })
+        return data
 
 
 class UsuarioSerializer(serializers.ModelSerializer):
