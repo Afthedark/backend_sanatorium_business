@@ -18,7 +18,6 @@ from .views import (
     ListarTareasEmpleadosEncargadoAPIView,
     ListarTareasUsuarioProyectoAPIView,
     LoginView,
-    LoginView,
     MeView,
 
 )

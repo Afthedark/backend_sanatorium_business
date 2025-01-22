@@ -6,6 +6,8 @@ from django.db import transaction
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer #para autenticación JWT
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth.hashers import check_password
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
 
 
 
@@ -13,31 +15,21 @@ class CustomTokenObtainPairSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
 
-    default_error_messages = {
-        'no_active_account': 'No existe un usuario con este email.',
-        'invalid_password': 'Contraseña incorrecta.'
-    }
-
     def validate(self, attrs):
         email = attrs.get('email')
         password = attrs.get('password')
 
         try:
-            # Buscar el usuario
             user = Usuario.objects.get(email=email)
-            
-            # Verificar la contraseña
             if not check_password(password, user.password):
-                raise serializers.ValidationError(
-                    self.error_messages['invalid_password']
-                )
+                raise serializers.ValidationError({
+                    'error': 'Contraseña incorrecta.'
+                })
 
-            # Generar tokens
             refresh = RefreshToken.for_user(user)
-
             data = {
-                'access': str(refresh.access_token),
                 'refresh': str(refresh),
+                'access': str(refresh.access_token),
                 'user': {
                     'id': user.id,
                     'nombre': user.nombre,
@@ -59,9 +51,13 @@ class CustomTokenObtainPairSerializer(serializers.Serializer):
             return data
 
         except Usuario.DoesNotExist:
-            raise serializers.ValidationError(
-                self.error_messages['no_active_account']
-            )
+            raise serializers.ValidationError({
+                'error': 'No existe un usuario con este email.'
+            })
+        except Exception as e:
+            raise serializers.ValidationError({
+                'error': str(e)
+            })
 
 
 class UsuarioSerializer(serializers.ModelSerializer):

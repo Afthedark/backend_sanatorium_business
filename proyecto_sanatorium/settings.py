@@ -60,6 +60,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
+    'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler'
 }
 
 # JWT Configuration
@@ -72,7 +73,10 @@ SIMPLE_JWT = {
     'USER_ID_FIELD': 'id',
     'USER_ID_CLAIM': 'user_id',
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'TOKEN_TYPE_CLAIM': 'token_type',
 }
+
 
 # Swagger Configuration
 SPECTACULAR_SETTINGS = {
