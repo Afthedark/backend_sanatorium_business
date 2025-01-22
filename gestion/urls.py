@@ -14,7 +14,11 @@ from .views import (
     ListarTareasProyectoAPIView,
     ListarTareasEmpleadosEncargadoAPIView,
     ListarTareasUsuarioProyectoAPIView,
+    CustomTokenObtainPairView,
 )
+
+from rest_framework_simplejwt.views import TokenRefreshView
+
 
 router = DefaultRouter()
 router.register('usuarios', UsuarioViewSet)
@@ -47,6 +51,10 @@ custom_urls = [
     path('tareas-usuario-proyecto/<int:empleado_id>/<int:proyecto_id>/', 
      ListarTareasUsuarioProyectoAPIView.as_view(), 
      name='tareas-usuario-proyecto'),
+
+
+    path('api/auth/login/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
 ]
 

@@ -21,13 +21,24 @@ from .serializers import (
     TareasEmpleadoSerializer,
     TareasProyectoSerializer,
     TareasEmpleadosEncargadoSerializer,
+    CustomTokenObtainPairSerializer,
 )
 
 from django.db.models import Max
 import logging
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 
+# para jwt
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework.permissions import IsAuthenticated
+
+
+
+
 logger = logging.getLogger(__name__)
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
 
 # Vistas para CRUD
 class UsuarioViewSet(ModelViewSet):
@@ -45,6 +56,7 @@ class PermisoViewSet(ModelViewSet):
 
 
 class TareaViewSet(ModelViewSet):
+    permission_classes = [IsAuthenticated]
     queryset = Tarea.objects.all()
     serializer_class = TareaSerializer
 

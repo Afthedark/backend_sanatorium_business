@@ -2,6 +2,46 @@ from rest_framework import serializers
 from .models import Usuario, Proyecto, Permiso, Tarea
 from django.db.models import Max
 from django.db import transaction
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    username_field = 'email'
+
+    def validate(self, attrs):
+        credentials = {
+            'email': attrs.get('email'),
+            'password': attrs.get('password')
+        }
+        
+        user = Usuario.objects.filter(email=credentials['email']).first()
+        if not user:
+            raise serializers.ValidationError({'email': 'No existe un usuario con este email'})
+            
+        if user.password != credentials['password']:  # En producción usar hash
+            raise serializers.ValidationError({'password': 'Contraseña incorrecta'})
+
+        data = super().validate(attrs)
+        
+        # Agregar información del usuario
+        data['user'] = {
+            'id': user.id,
+            'nombre': user.nombre,
+            'email': user.email,
+            'rol': user.rol,
+            'created_at': user.created_at,
+            'updated_at': user.updated_at,
+        }
+
+        if user.rol == 'empleado' and user.encargado:
+            data['user']['encargado'] = {
+                'id': user.encargado.id,
+                'nombre': user.encargado.nombre,
+                'email': user.encargado.email,
+                'rol': user.encargado.rol
+            }
+
+        return data
 
 
 
