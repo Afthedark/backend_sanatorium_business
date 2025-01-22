@@ -1,10 +1,12 @@
 from django.db import models
+from django.contrib.auth.models import AbstractUser
+
 
 # Create your models here.
 
 from django.db import models
 
-class Usuario(models.Model):
+class Usuario(AbstractUser):
     ROLES = [
         ('administrador', 'Administrador'),
         ('encargado', 'Encargado'),
@@ -24,6 +26,9 @@ class Usuario(models.Model):
         related_name='empleados',  # Para acceder desde el encargado a sus empleados
         limit_choices_to={'rol': 'encargado'}  # Solo permitir seleccionar encargados
     )
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username', 'nombre']
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
