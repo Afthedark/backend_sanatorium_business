@@ -45,9 +45,9 @@ INSTALLED_APPS = [
     'gestion', 
     'rest_framework',
     'django_extensions',
-    'drf_spectacular', # para swagger
+    'drf_spectacular', # para swagger 
     'corsheaders', # para cors
-    'rest_framework_simplejwt', # para JWT
+    'rest_framework_simplejwt', # para JWT tokens
 ]
 
 # Rest Framework Configuration
