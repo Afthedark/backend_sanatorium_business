@@ -1,8 +1,10 @@
 from django.db import models
 
-# Create your models here.
+from django.contrib.auth.hashers import make_password, check_password
 
-from django.db import models
+
+
+# Create your models here. aqui los modelos
 
 class Usuario(models.Model):
     ROLES = [
@@ -28,8 +30,50 @@ class Usuario(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    # Para SimpleJWT y Django:
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = []  # <--- Agrega esto
+
+
+    # Si no requieres Django Admin, puedes dejar is_active como propiedad;
+    # si usas Django Admin, lo ideal sería convertirlo en un models.BooleanField.
+    is_active = True  
+
+    class Meta:
+        ordering = ['-created_at']
+
     def __str__(self):
         return self.nombre
+
+    @property
+    def is_anonymous(self):
+        return False
+
+    @property
+    def is_authenticated(self):
+        return True
+
+    def check_password(self, raw_password):
+        return check_password(raw_password, self.password)
+
+    def set_password(self, raw_password):
+        self.password = make_password(raw_password)
+
+    def save(self, *args, **kwargs):
+        if self._state.adding or not self.password.startswith('pbkdf2_sha256$'):
+            self.set_password(self.password)
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def get_by_natural_key(cls, email):
+        return cls.objects.get(email=email)
+
+    def get_username(self):
+        return self.email
+
+
+
+
 
 class Proyecto(models.Model):
     ESTADOS = [
