@@ -628,7 +628,6 @@ class GenerateTasksReportAdminAPIView(GenerateTasksReportBaseAPIView):
     Genera un reporte PDF de tareas para administradores.
     Los administradores pueden ver cualquier proyecto y empleado.
     """
-    permission_classes = [AllowAny]  # Permitir acceso sin autenticación temporal
     def get(self, request):
         # Obtener parámetros de filtro
         proyecto_id = request.query_params.get('proyecto_id')
@@ -672,7 +671,6 @@ class GenerateTasksReportEncargadoAPIView(GenerateTasksReportBaseAPIView):
     Genera un reporte PDF de tareas para encargados.
     Los encargados solo pueden ver sus empleados y proyectos asignados.
     """
-    permission_classes = [AllowAny]  # Permitir acceso sin autenticación temporal
     def get(self, request):
         # Obtener parámetros de filtro
         proyecto_id = request.query_params.get('proyecto_id')
