@@ -2,10 +2,14 @@
 from datetime import date
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.units import inch
 from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
+# Para PDF
 
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.views import APIView
@@ -541,48 +545,82 @@ class GenerateTasksReportBaseAPIView(APIView):
         response['Content-Disposition'] = f'attachment; filename="{filename_prefix}_{proyecto.id}.pdf"'
 
         # Crear un objeto PDF
-        p = canvas.Canvas(response, pagesize=letter)
-        width, height = letter
+        buffer = response
+        doc = SimpleDocTemplate(buffer, pagesize=letter)
+        elements = []
 
-        # Configurar estilos y agregar contenido al PDF
-        p.setFont("Helvetica-Bold", 16)
-        p.drawString(inch, height - inch, f"Informe de Tareas del Proyecto: {proyecto.nombre}")
+        # Estilos
+        styles = getSampleStyleSheet()
+        style_title = styles['Title']
+        style_heading = styles['Heading2']
+        style_normal = styles['Normal']
 
-        p.setFont("Helvetica", 12)
-        p.drawString(inch, height - 1.5 * inch, f"Descripción: {proyecto.descripcion}")
-        p.drawString(inch, height - 2 * inch, f"Fecha de Inicio: {proyecto.fecha_inicio}")
-        p.drawString(inch, height - 2.5 * inch, f"Fecha de Fin: {proyecto.fecha_fin or 'No especificada'}")
-        p.drawString(inch, height - 3 * inch, f"Estado: {proyecto.estado}")
-        p.drawString(inch, height - 3.5 * inch, f"Encargado: {proyecto.encargado.nombre}")
+        # Título del informe
+        title = Paragraph(f"Informe de Tareas del Proyecto: {proyecto.nombre}", style_title)
+        elements.append(title)
 
-        # Listar tareas del proyecto
+        # Información general del proyecto
+        project_info = [
+            f"Descripción: {proyecto.descripcion}",
+            f"Fecha de Inicio: {proyecto.fecha_inicio}",
+            f"Fecha de Fin: {proyecto.fecha_fin or 'No especificada'}",
+            f"Estado: {proyecto.estado}",
+            f"Encargado: {proyecto.encargado.nombre}",
+        ]
+        for line in project_info:
+            elements.append(Paragraph(line, style_normal))
+        elements.append(Spacer(1, 12))
+
+        # Verificar si hay tareas
         if not tareas.exists():
-            p.setFont("Helvetica-Bold", 14)
-            p.drawString(inch, height - 4 * inch, "No se encontraron tareas.")
+            no_tasks_message = Paragraph("No se encontraron tareas.", style_heading)
+            elements.append(no_tasks_message)
         else:
-            p.setFont("Helvetica-Bold", 14)
-            p.drawString(inch, height - 4 * inch, "Tareas:")
-            task_height = height - 4.5 * inch
+            # Encabezados de la tabla
+            headers = [
+                "Empleado",
+                "Título",
+                "Descripción",
+                "Proyecto",
+                "Fecha",
+                "Horas Dedicadas",
+                "Estado",
+            ]
+
+            # Datos de la tabla
+            data = [headers]
             for task in tareas:
-                p.setFont("Helvetica", 12)
-                p.drawString(inch, task_height, f"Empleado: {task.empleado.nombre}")
-                p.drawString(inch, task_height - 0.25 * inch, f"Título: {task.titulo}")
-                p.drawString(inch, task_height - 0.5 * inch, f"Descripción: {task.descripcion}")
-                p.drawString(inch, task_height - 0.75 * inch, f"Proyecto: {task.proyecto.nombre}")
-                p.drawString(inch, task_height - 1 * inch, f"Fecha: {task.fecha}")
-                p.drawString(inch, task_height - 1.25 * inch, f"Horas dedicadas: {task.horas_invertidas}")
-                p.drawString(inch, task_height - 1.5 * inch, f"Estado: {task.estado}")
-                task_height -= 1.75 * inch
+                row = [
+                    task.empleado.nombre,
+                    task.titulo,
+                    task.descripcion,
+                    task.proyecto.nombre,
+                    str(task.fecha),
+                    str(task.horas_invertidas),
+                    task.estado,
+                ]
+                data.append(row)
 
-                # Añadir una nueva página si se llega al final de la página actual
-                if task_height < 1 * inch:
-                    p.showPage()
-                    task_height = height - 0.5 * inch
+            # Crear la tabla
+            table = Table(data)
+            table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ]))
 
-        # Finalizar el PDF
-        p.showPage()
-        p.save()
+            # Agregar la tabla al documento
+            elements.append(table)
+
+        # Construir el PDF
+        doc.build(elements)
         return response
+
+
 
 
 class GenerateTasksReportAdminAPIView(GenerateTasksReportBaseAPIView):
