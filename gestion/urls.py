@@ -20,6 +20,8 @@ from .views import (
     LoginView,
     LoginView,
     MeView,
+    GenerateTasksReportAdminAPIView,  
+    GenerateTasksReportEncargadoAPIView,  
 
 )
 
@@ -55,10 +57,16 @@ custom_urls = [
      ListarTareasUsuarioProyectoAPIView.as_view(), 
      name='tareas-usuario-proyecto'),
 
+     # Reportes PDF
+    path('tasks/report/admin/', GenerateTasksReportAdminAPIView.as_view(), name='generate_tasks_report_admin'),
+    path('tasks/report/encargado/', GenerateTasksReportEncargadoAPIView.as_view(), name='generate_tasks_report_encargado'),
+    
      # Autenticación
     path('auth/login/', LoginView.as_view(), name='token_obtain_pair'),
     path('auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('me/', MeView.as_view(), name='me'),
+
+    
 
 ]
 
