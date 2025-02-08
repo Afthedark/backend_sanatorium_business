@@ -4,6 +4,8 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.units import inch
 from django.db.models import Q
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
 
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.views import APIView
@@ -529,8 +531,61 @@ class ListarTareasUsuarioProyectoAPIView(APIView):
 
 
 #REPORTES PDF 
+class GenerateTasksReportBaseAPIView(APIView):
+    """
+    Clase base para generar reportes PDF de tareas.
+    """
+    def generate_pdf(self, proyecto, tareas, filename_prefix):
+        # Crear una respuesta HTTP con tipo de contenido PDF
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="{filename_prefix}_{proyecto.id}.pdf"'
 
-class GenerateTasksReportAdminAPIView(APIView):
+        # Crear un objeto PDF
+        p = canvas.Canvas(response, pagesize=letter)
+        width, height = letter
+
+        # Configurar estilos y agregar contenido al PDF
+        p.setFont("Helvetica-Bold", 16)
+        p.drawString(inch, height - inch, f"Informe de Tareas del Proyecto: {proyecto.nombre}")
+
+        p.setFont("Helvetica", 12)
+        p.drawString(inch, height - 1.5 * inch, f"Descripción: {proyecto.descripcion}")
+        p.drawString(inch, height - 2 * inch, f"Fecha de Inicio: {proyecto.fecha_inicio}")
+        p.drawString(inch, height - 2.5 * inch, f"Fecha de Fin: {proyecto.fecha_fin or 'No especificada'}")
+        p.drawString(inch, height - 3 * inch, f"Estado: {proyecto.estado}")
+        p.drawString(inch, height - 3.5 * inch, f"Encargado: {proyecto.encargado.nombre}")
+
+        # Listar tareas del proyecto
+        if not tareas.exists():
+            p.setFont("Helvetica-Bold", 14)
+            p.drawString(inch, height - 4 * inch, "No se encontraron tareas.")
+        else:
+            p.setFont("Helvetica-Bold", 14)
+            p.drawString(inch, height - 4 * inch, "Tareas:")
+            task_height = height - 4.5 * inch
+            for task in tareas:
+                p.setFont("Helvetica", 12)
+                p.drawString(inch, task_height, f"Empleado: {task.empleado.nombre}")
+                p.drawString(inch, task_height - 0.25 * inch, f"Título: {task.titulo}")
+                p.drawString(inch, task_height - 0.5 * inch, f"Descripción: {task.descripcion}")
+                p.drawString(inch, task_height - 0.75 * inch, f"Proyecto: {task.proyecto.nombre}")
+                p.drawString(inch, task_height - 1 * inch, f"Fecha: {task.fecha}")
+                p.drawString(inch, task_height - 1.25 * inch, f"Horas dedicadas: {task.horas_invertidas}")
+                p.drawString(inch, task_height - 1.5 * inch, f"Estado: {task.estado}")
+                task_height -= 1.75 * inch
+
+                # Añadir una nueva página si se llega al final de la página actual
+                if task_height < 1 * inch:
+                    p.showPage()
+                    task_height = height - 0.5 * inch
+
+        # Finalizar el PDF
+        p.showPage()
+        p.save()
+        return response
+
+
+class GenerateTasksReportAdminAPIView(GenerateTasksReportBaseAPIView):
     """
     Genera un reporte PDF de tareas para administradores.
     Los administradores pueden ver cualquier proyecto y empleado.
@@ -551,10 +606,8 @@ class GenerateTasksReportAdminAPIView(APIView):
 
         # Convertir fechas a objetos date
         try:
-            if fecha_inicio:
-                fecha_inicio = date.fromisoformat(fecha_inicio)
-            if fecha_fin:
-                fecha_fin = date.fromisoformat(fecha_fin)
+            fecha_inicio = date.fromisoformat(fecha_inicio) if fecha_inicio else None
+            fecha_fin = date.fromisoformat(fecha_fin) if fecha_fin else None
         except ValueError:
             return Response(
                 {'error': 'Formato de fecha incorrecto. Use YYYY-MM-DD'},
@@ -571,55 +624,11 @@ class GenerateTasksReportAdminAPIView(APIView):
             proyecto__estado=estado_proyecto if estado_proyecto else Q()
         ).select_related('empleado', 'proyecto')
 
-        # Crear una respuesta HTTP con tipo de contenido PDF
-        response = HttpResponse(content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename="reporte_tareas_admin_{proyecto_id}.pdf"'
-
-        # Crear un objeto PDF
-        p = canvas.Canvas(response, pagesize=letter)
-        width, height = letter
-
-        # Configurar estilos y agregar contenido al PDF
-        p.setFont("Helvetica-Bold", 16)
-        p.drawString(inch, height - inch, f"Informe de Tareas del Proyecto: {proyecto.nombre}")
-
-        p.setFont("Helvetica", 12)
-        p.drawString(inch, height - 1.5*inch, f"Descripción: {proyecto.descripcion}")
-        p.drawString(inch, height - 2*inch, f"Fecha de Inicio: {proyecto.fecha_inicio}")
-        p.drawString(inch, height - 2.5*inch, f"Fecha de Fin: {proyecto.fecha_fin or 'No especificada'}")
-        p.drawString(inch, height - 3*inch, f"Estado: {proyecto.estado}")
-        p.drawString(inch, height - 3.5*inch, f"Encargado: {proyecto.encargado.nombre}")
-
-        # Listar tareas del proyecto
-        p.setFont("Helvetica-Bold", 14)
-        p.drawString(inch, height - 4*inch, "Tareas:")
-
-        task_height = height - 4.5*inch
-        for task in tareas:
-            p.setFont("Helvetica", 12)
-            p.drawString(inch, task_height, f"Empleado: {task.empleado.nombre}")
-            p.drawString(inch, task_height - 0.25*inch, f"Título: {task.titulo}")
-            p.drawString(inch, task_height - 0.5*inch, f"Descripción: {task.descripcion}")
-            p.drawString(inch, task_height - 0.75*inch, f"Proyecto: {task.proyecto.nombre}")
-            p.drawString(inch, task_height - 1*inch, f"Fecha: {task.fecha}")
-            p.drawString(inch, task_height - 1.25*inch, f"Horas dedicadas: {task.horas_invertidas}")
-            p.drawString(inch, task_height - 1.5*inch, f"Estado: {task.estado}")
-            task_height -= 1.75*inch
-
-            # Añadir una nueva página si se llega al final de la página actual
-            if task_height < 1*inch:
-                p.showPage()
-                task_height = height - 0.5*inch
-
-        # Finalizar el PDF
-        p.showPage()
-        p.save()
-
-        return response
-    
+        # Generar el PDF
+        return self.generate_pdf(proyecto, tareas, "reporte_tareas_admin")
 
 
-class GenerateTasksReportEncargadoAPIView(APIView):
+class GenerateTasksReportEncargadoAPIView(GenerateTasksReportBaseAPIView):
     """
     Genera un reporte PDF de tareas para encargados.
     Los encargados solo pueden ver sus empleados y proyectos asignados.
@@ -640,10 +649,8 @@ class GenerateTasksReportEncargadoAPIView(APIView):
 
         # Convertir fechas a objetos date
         try:
-            if fecha_inicio:
-                fecha_inicio = date.fromisoformat(fecha_inicio)
-            if fecha_fin:
-                fecha_fin = date.fromisoformat(fecha_fin)
+            fecha_inicio = date.fromisoformat(fecha_inicio) if fecha_inicio else None
+            fecha_fin = date.fromisoformat(fecha_fin) if fecha_fin else None
         except ValueError:
             return Response(
                 {'error': 'Formato de fecha incorrecto. Use YYYY-MM-DD'},
@@ -667,48 +674,5 @@ class GenerateTasksReportEncargadoAPIView(APIView):
             proyecto__estado=estado_proyecto if estado_proyecto else Q()
         ).select_related('empleado', 'proyecto')
 
-        # Crear una respuesta HTTP con tipo de contenido PDF
-        response = HttpResponse(content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename="reporte_tareas_encargado_{proyecto_id}.pdf"'
-
-        # Crear un objeto PDF
-        p = canvas.Canvas(response, pagesize=letter)
-        width, height = letter
-
-        # Configurar estilos y agregar contenido al PDF
-        p.setFont("Helvetica-Bold", 16)
-        p.drawString(inch, height - inch, f"Informe de Tareas del Proyecto: {proyecto.nombre}")
-
-        p.setFont("Helvetica", 12)
-        p.drawString(inch, height - 1.5*inch, f"Descripción: {proyecto.descripcion}")
-        p.drawString(inch, height - 2*inch, f"Fecha de Inicio: {proyecto.fecha_inicio}")
-        p.drawString(inch, height - 2.5*inch, f"Fecha de Fin: {proyecto.fecha_fin or 'No especificada'}")
-        p.drawString(inch, height - 3*inch, f"Estado: {proyecto.estado}")
-        p.drawString(inch, height - 3.5*inch, f"Encargado: {proyecto.encargado.nombre}")
-
-        # Listar tareas del proyecto
-        p.setFont("Helvetica-Bold", 14)
-        p.drawString(inch, height - 4*inch, "Tareas:")
-
-        task_height = height - 4.5*inch
-        for task in tareas:
-            p.setFont("Helvetica", 12)
-            p.drawString(inch, task_height, f"Empleado: {task.empleado.nombre}")
-            p.drawString(inch, task_height - 0.25*inch, f"Título: {task.titulo}")
-            p.drawString(inch, task_height - 0.5*inch, f"Descripción: {task.descripcion}")
-            p.drawString(inch, task_height - 0.75*inch, f"Proyecto: {task.proyecto.nombre}")
-            p.drawString(inch, task_height - 1*inch, f"Fecha: {task.fecha}")
-            p.drawString(inch, task_height - 1.25*inch, f"Horas dedicadas: {task.horas_invertidas}")
-            p.drawString(inch, task_height - 1.5*inch, f"Estado: {task.estado}")
-            task_height -= 1.75*inch
-
-            # Añadir una nueva página si se llega al final de la página actual
-            if task_height < 1*inch:
-                p.showPage()
-                task_height = height - 0.5*inch
-
-        # Finalizar el PDF
-        p.showPage()
-        p.save()
-
-        return response
+        # Generar el PDF
+        return self.generate_pdf(proyecto, tareas, "reporte_tareas_encargado")
