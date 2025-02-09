@@ -565,8 +565,19 @@ class GenerateTasksReportBaseAPIView(APIView):
             wordWrap='CJK',  # Permite saltos de línea automáticos
         )
 
+        # Estilo personalizado para encabezados
+        style_header = ParagraphStyle(
+            name='HeaderStyle',
+            parent=styles['Normal'],
+            fontSize=9,
+            leading=12,
+            alignment=1,  # Centrado
+            textColor=colors.whitesmoke,
+            backColor=colors.grey,
+        )
+
         # Título del informe
-        title = Paragraph(f"Reporte de Tareas Empleados", style_title)
+        title = Paragraph(f"Reporte de Tareas", style_title)
         elements.append(title)
 
         # Mostrar los filtros aplicados
@@ -592,13 +603,13 @@ class GenerateTasksReportBaseAPIView(APIView):
         else:
             # Encabezados de la tabla
             headers = [
-                "Empleado",
-                "Título",
-                "Descripción",
-                "Proyecto",
-                "Fecha",
-                "Horas Dedicadas",
-                "Estado",
+                Paragraph("Empleado", style_header),
+                Paragraph("Título", style_header),
+                Paragraph("Descripción", style_header),
+                Paragraph("Proyecto", style_header),
+                Paragraph("Fecha", style_header),
+                Paragraph("Horas Dedicadas", style_header),
+                Paragraph("Estado", style_header),
             ]
 
             # Datos de la tabla
