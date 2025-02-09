@@ -543,7 +543,14 @@ class GenerateTasksReportBaseAPIView(APIView):
     def generate_pdf(self, proyecto, tareas, filename_prefix, filtros_aplicados):
         # Crear una respuesta HTTP con tipo de contenido PDF
         response = HttpResponse(content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename="{filename_prefix}.pdf"'
+        
+        # Personalizar el nombre del archivo
+        if proyecto:
+            filename = f"{filename_prefix}_{proyecto.nombre.replace(' ', '_')}.pdf"
+        else:
+            filename = f"{filename_prefix}_general.pdf"
+        
+        response['Content-Disposition'] = f'inline; filename="{filename}"'
 
         # Crear un objeto PDF
         buffer = response
