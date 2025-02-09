@@ -556,7 +556,7 @@ class GenerateTasksReportBaseAPIView(APIView):
         style_normal = styles['Normal']
 
         # Título del informe
-        title = Paragraph(f"Informe de Tareas", style_title)
+        title = Paragraph(f"Reporte de Tareas Empleados", style_title)
         elements.append(title)
 
         # Mostrar los filtros aplicados
