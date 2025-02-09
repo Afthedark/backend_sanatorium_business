@@ -9,6 +9,7 @@ from reportlab.lib.units import inch
 from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
+from reportlab.lib.styles import ParagraphStyle
 # Para PDF
 
 from rest_framework.viewsets import ModelViewSet
@@ -555,11 +556,27 @@ class GenerateTasksReportBaseAPIView(APIView):
         style_heading = styles['Heading2']
         style_normal = styles['Normal']
 
+        # Estilo personalizado para celdas con texto largo
+        style_cell = ParagraphStyle(
+            name='CellStyle',
+            parent=styles['Normal'],
+            fontSize=8,
+            leading=10,  # Espaciado entre líneas
+            wordWrap='CJK',  # Permite saltos de línea automáticos
+        )
+
         # Título del informe
         title = Paragraph(f"Informe de Tareas", style_title)
         elements.append(title)
 
         # Mostrar los filtros aplicados
+        if filtros_aplicados:
+            filters_text = ["Filtros Aplicados:"]
+            for key, value in filtros_aplicados.items():
+                filters_text.append(f"- {key}: {value}")
+            for line in filters_text:
+                elements.append(Paragraph(line, style_normal))
+            elements.append(Spacer(1, 12))
 
         # Información general del proyecto (si se proporciona)
         if proyecto:
@@ -595,18 +612,18 @@ class GenerateTasksReportBaseAPIView(APIView):
             data = [headers]
             for task in tareas:
                 row = [
-                    task.empleado.nombre,
-                    task.titulo,
-                    task.descripcion,
-                    task.proyecto.nombre if task.proyecto else "N/A",
-                    str(task.fecha),
-                    str(task.horas_invertidas),
-                    task.estado,
+                    Paragraph(task.empleado.nombre, style_cell),
+                    Paragraph(task.titulo, style_cell),
+                    Paragraph(task.descripcion, style_cell),
+                    Paragraph(task.proyecto.nombre if task.proyecto else "N/A", style_cell),
+                    Paragraph(str(task.fecha), style_cell),
+                    Paragraph(str(task.horas_invertidas), style_cell),
+                    Paragraph(task.estado, style_cell),
                 ]
                 data.append(row)
 
             # Crear la tabla
-            table = Table(data)
+            table = Table(data, colWidths=[70, 90, 120, 90, 60, 50, 60])  # Anchos de columna personalizados
             table.setStyle(TableStyle([
                 ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
                 ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
@@ -615,6 +632,7 @@ class GenerateTasksReportBaseAPIView(APIView):
                 ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
                 ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
                 ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                ('VALIGN', (0, 0), (-1, -1), 'TOP'),  # Alinear texto al inicio de la celda
             ]))
 
             # Agregar la tabla al documento
