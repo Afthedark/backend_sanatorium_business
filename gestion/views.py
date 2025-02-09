@@ -566,17 +566,10 @@ class GenerateTasksReportBaseAPIView(APIView):
         )
 
         # Título del informe
-        title = Paragraph(f"Informe de Tareas", style_title)
+        title = Paragraph(f"Reporte de Tareas Empleados", style_title)
         elements.append(title)
 
         # Mostrar los filtros aplicados
-        if filtros_aplicados:
-            filters_text = ["Filtros Aplicados:"]
-            for key, value in filtros_aplicados.items():
-                filters_text.append(f"- {key}: {value}")
-            for line in filters_text:
-                elements.append(Paragraph(line, style_normal))
-            elements.append(Spacer(1, 12))
 
         # Información general del proyecto (si se proporciona)
         if proyecto:
