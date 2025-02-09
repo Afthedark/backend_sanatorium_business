@@ -32,3 +32,5 @@ Quitar estados y tambien los ordenes mostrar todas las tareas de ese proyecto
 
 
 #tokens para logins para los 3 roles para que inicien sesion  
+
+#Proyectos dev 

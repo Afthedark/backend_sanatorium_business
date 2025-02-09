@@ -1,4 +1,4 @@
-from rest_framework_simplejwt.views import TokenRefreshView  # Añade esta importación
+from rest_framework_simplejwt.views import TokenRefreshView  # Añadir esta importación
 
 
 from django.urls import path, include
