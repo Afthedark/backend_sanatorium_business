@@ -594,7 +594,7 @@ class GenerateTasksReportBaseAPIView(APIView):
         )
 
         # Título del informe
-        title = Paragraph("Reporte de Tareas Empleado", style_title)
+        title = Paragraph("Reporte de Tareas", style_title)
         elements.append(title)
 
         # Mostrar los filtros aplicados
@@ -632,21 +632,23 @@ class GenerateTasksReportBaseAPIView(APIView):
             no_tasks_message = Paragraph("No se encontraron tareas.", style_heading)
             elements.append(no_tasks_message)
         else:
-            # Encabezados de la tabla
+            # Encabezados de la tabla (agregamos la columna "N°")
             headers = [
+                Paragraph("N°", style_header),
                 Paragraph("Empleado", style_header),
                 Paragraph("Título", style_header),
                 Paragraph("Descripción", style_header),
                 Paragraph("Proyecto", style_header),
                 Paragraph("Fecha", style_header),
-                Paragraph("Horas", style_header),
+                Paragraph("Horas Dedicadas", style_header),
                 Paragraph("Estado", style_header),
             ]
 
             # Datos de la tabla
             data = [headers]
-            for task in tareas:
+            for index, task in enumerate(tareas, start=1):  # Contador para numeración
                 row = [
+                    Paragraph(str(index), style_cell),  # Número consecutivo
                     Paragraph(task.empleado.nombre, style_cell),
                     Paragraph(task.titulo, style_cell),
                     Paragraph(task.descripcion, style_cell),
@@ -658,7 +660,7 @@ class GenerateTasksReportBaseAPIView(APIView):
                 data.append(row)
 
             # Crear la tabla
-            table = Table(data, colWidths=[70, 90, 120, 90, 60, 50, 60])  # Anchos de columna personalizados
+            table = Table(data, colWidths=[30, 70, 90, 120, 90, 60, 50, 60])  # Ancho ajustado para la nueva columna
             table.setStyle(TableStyle([
                 ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
                 ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
@@ -714,8 +716,6 @@ class GenerateTasksReportBaseAPIView(APIView):
 
 
 
-
-    
 class GenerateTasksReportAdminAPIView(GenerateTasksReportBaseAPIView):
     """
     Genera un reporte PDF de tareas para administradores.
@@ -760,8 +760,6 @@ class GenerateTasksReportAdminAPIView(GenerateTasksReportBaseAPIView):
         return self.generate_pdf(proyecto, tareas, "reporte_tareas_admin", filtros_aplicados)
 
 
-    
-  
 
 class GenerateTasksReportEncargadoAPIView(GenerateTasksReportAdminAPIView):
     """
@@ -805,5 +803,3 @@ class GenerateTasksReportEncargadoAPIView(GenerateTasksReportAdminAPIView):
 
         # Generar el PDF
         return self.generate_pdf(proyecto, tareas, "reporte_tareas_encargado", filtros_aplicados)
-    
-
