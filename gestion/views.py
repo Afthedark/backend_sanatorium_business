@@ -9,7 +9,7 @@ from reportlab.lib.units import inch
 from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
-from reportlab.lib.styles import ParagraphStyle
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 # Para PDF
 
 from rest_framework.viewsets import ModelViewSet
@@ -583,28 +583,45 @@ class GenerateTasksReportBaseAPIView(APIView):
             backColor=colors.grey,
         )
 
+        # Estilo para encabezados de secciones
+        style_section_header = ParagraphStyle(
+            name='SectionHeader',
+            parent=styles['Normal'],
+            fontSize=12,
+            leading=14,
+            fontName='Helvetica-Bold',
+            spaceAfter=6,  # Espaciado después del encabezado
+        )
+
         # Título del informe
-        title = Paragraph(f"Reporte de Tareas", style_title)
+        title = Paragraph("Reporte de Tareas Empleado", style_title)
         elements.append(title)
 
         # Mostrar los filtros aplicados
         if filtros_aplicados:
-            filters_text = ["Filtros Aplicados:"]
+            filters_title = Paragraph("Filtros Aplicados", style_section_header)
+            elements.append(filters_title)
+            
+            filters_text = []
             for key, value in filtros_aplicados.items():
-                filters_text.append(f"- {key}: {value}")
+                filters_text.append(f"<b>{key}:</b> {value}")
+            
             for line in filters_text:
                 elements.append(Paragraph(line, style_normal))
             elements.append(Spacer(1, 12))
 
         # Información general del proyecto (si se proporciona)
-        if proyecto:
+        if proyecto and not filtros_aplicados.get("Proyecto"):
+            project_title = Paragraph("Información del Proyecto", style_section_header)
+            elements.append(project_title)
+            
             project_info = [
-                f"Proyecto: {proyecto.nombre}",
-                f"Descripción: {proyecto.descripcion}",
-                f"Fecha de Inicio: {proyecto.fecha_inicio}",
-                f"Fecha de Fin: {proyecto.fecha_fin or 'No especificada'}",
-                f"Estado: {proyecto.estado}",
-                f"Encargado: {proyecto.encargado.nombre}",
+                f"<b>Proyecto:</b> {proyecto.nombre}",
+                f"<b>Descripción:</b> {proyecto.descripcion}",
+                f"<b>Fecha de Inicio:</b> {proyecto.fecha_inicio}",
+                f"<b>Fecha de Fin:</b> {proyecto.fecha_fin or 'No especificada'}",
+                f"<b>Estado:</b> {proyecto.estado}",
+                f"<b>Encargado:</b> {proyecto.encargado.nombre}",
             ]
             for line in project_info:
                 elements.append(Paragraph(line, style_normal))
@@ -660,21 +677,60 @@ class GenerateTasksReportBaseAPIView(APIView):
         doc.build(elements)
         return response
 
+    def aplicar_filtros(self, queryset, params):
+        filters = Q()
+
+        # Filtro por nombre del empleado
+        empleado_name = params.get('empleado_name')
+        if empleado_name:
+            filters &= Q(empleado__nombre__icontains=empleado_name)
+
+        # Filtro por rango de fechas
+        fecha_inicio = params.get('fecha_inicio')
+        fecha_fin = params.get('fecha_fin')
+        if fecha_inicio and fecha_fin:
+            try:
+                fecha_inicio = date.fromisoformat(fecha_inicio)
+                fecha_fin = date.fromisoformat(fecha_fin)
+                filters &= Q(fecha__range=(fecha_inicio, fecha_fin))
+            except ValueError:
+                return Response(
+                    {'error': 'Formato de fecha incorrecto. Use YYYY-MM-DD'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        # Filtro por estado de la tarea
+        estado = params.get('estado')
+        if estado:
+            filters &= Q(estado=estado)
+
+        # Filtro por proyecto (opcional)
+        proyecto_id = params.get('proyecto_id')
+        if proyecto_id:
+            filters &= Q(proyecto_id=proyecto_id)
+
+        # Aplicar los filtros al queryset
+        return queryset.filter(filters)
 
 
+
+
+    
 class GenerateTasksReportAdminAPIView(GenerateTasksReportBaseAPIView):
     """
     Genera un reporte PDF de tareas para administradores.
     Los administradores pueden ver cualquier proyecto y empleado.
     """
-    def post(self, request):
-        # Obtener datos del cuerpo de la solicitud
-        data = request.data
-        proyecto_id = data.get('proyecto_id')
-        empleado_name = data.get('empleado_name')
-        fecha_inicio = data.get('fecha_inicio')
-        fecha_fin = data.get('fecha_fin')
-        estado = data.get('estado')
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Obtener datos de los parámetros de consulta
+        params = request.query_params
+        proyecto_id = params.get('proyecto_id')
+        empleado_name = params.get('empleado_name')
+        fecha_inicio = params.get('fecha_inicio')
+        fecha_fin = params.get('fecha_fin')
+        estado = params.get('estado')
 
         # Validar que al menos un filtro esté presente
         if not any([proyecto_id, empleado_name, fecha_inicio, fecha_fin, estado]):
@@ -685,7 +741,7 @@ class GenerateTasksReportAdminAPIView(GenerateTasksReportBaseAPIView):
 
         # Filtrar tareas según los parámetros
         tareas = Tarea.objects.all()
-        tareas = self.aplicar_filtros(tareas, data)
+        tareas = self.aplicar_filtros(tareas, params)
 
         # Obtener el proyecto si se proporciona proyecto_id
         proyecto = None
@@ -703,56 +759,25 @@ class GenerateTasksReportAdminAPIView(GenerateTasksReportBaseAPIView):
         # Generar el PDF
         return self.generate_pdf(proyecto, tareas, "reporte_tareas_admin", filtros_aplicados)
 
-    def aplicar_filtros(self, queryset, data):
-        filters = Q()
 
-        # Filtro por nombre del empleado
-        empleado_name = data.get('empleado_name')
-        if empleado_name:
-            filters &= Q(empleado__nombre__icontains=empleado_name)
-
-        # Filtro por rango de fechas
-        fecha_inicio = data.get('fecha_inicio')
-        fecha_fin = data.get('fecha_fin')
-        if fecha_inicio and fecha_fin:
-            try:
-                fecha_inicio = date.fromisoformat(fecha_inicio)
-                fecha_fin = date.fromisoformat(fecha_fin)
-                filters &= Q(fecha__range=(fecha_inicio, fecha_fin))
-            except ValueError:
-                return Response(
-                    {'error': 'Formato de fecha incorrecto. Use YYYY-MM-DD'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-        # Filtro por estado de la tarea
-        estado = data.get('estado')
-        if estado:
-            filters &= Q(estado=estado)
-
-        # Filtro por proyecto (opcional)
-        proyecto_id = data.get('proyecto_id')
-        if proyecto_id:
-            filters &= Q(proyecto_id=proyecto_id)
-
-        # Aplicar los filtros al queryset
-        return queryset.filter(filters)
-
-
+    
+  
 
 class GenerateTasksReportEncargadoAPIView(GenerateTasksReportAdminAPIView):
     """
     Genera un reporte PDF de tareas para encargados.
     Los encargados solo pueden ver sus empleados y proyectos asignados.
     """
-    def post(self, request):
-        # Obtener datos del cuerpo de la solicitud
-        data = request.data
-        proyecto_id = data.get('proyecto_id')
-        empleado_name = data.get('empleado_name')
-        fecha_inicio = data.get('fecha_inicio')
-        fecha_fin = data.get('fecha_fin')
-        estado = data.get('estado')
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Obtener datos de los parámetros de consulta
+        params = request.query_params
+        proyecto_id = params.get('proyecto_id')
+        empleado_name = params.get('empleado_name')
+        fecha_inicio = params.get('fecha_inicio')
+        fecha_fin = params.get('fecha_fin')
+        estado = params.get('estado')
 
         # Validar que al menos un filtro esté presente
         if not any([proyecto_id, empleado_name, fecha_inicio, fecha_fin, estado]):
@@ -763,7 +788,7 @@ class GenerateTasksReportEncargadoAPIView(GenerateTasksReportAdminAPIView):
 
         # Filtrar tareas según los parámetros
         tareas = Tarea.objects.all()
-        tareas = self.aplicar_filtros(tareas, data)
+        tareas = self.aplicar_filtros(tareas, params)
 
         # Obtener el proyecto si se proporciona proyecto_id
         proyecto = None
@@ -780,3 +805,5 @@ class GenerateTasksReportEncargadoAPIView(GenerateTasksReportAdminAPIView):
 
         # Generar el PDF
         return self.generate_pdf(proyecto, tareas, "reporte_tareas_encargado", filtros_aplicados)
+    
+
