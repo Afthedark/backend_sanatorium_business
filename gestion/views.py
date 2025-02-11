@@ -640,7 +640,7 @@ class GenerateTasksReportBaseAPIView(APIView):
                 Paragraph("Descripción", style_header),
                 Paragraph("Proyecto", style_header),
                 Paragraph("Fecha", style_header),
-                Paragraph("Horas Dedicadas", style_header),
+                Paragraph("Horas", style_header),
                 Paragraph("Estado", style_header),
             ]
 
